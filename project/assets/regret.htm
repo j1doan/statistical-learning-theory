@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lean 4 Formalization: Regret Bounds for Online Gradient Descent</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+  <link href="regret_files/css2.css" rel="stylesheet">
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="regret_files/katex.min.css">
+  <script defer src="regret_files/katex.min.js"></script>
+  <script defer src="regret_files/autorender.min.js" onload="renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError: false
+    });"></script>
+
+  <!-- Mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #09090b;
+      --bg-sidebar: #0c0c0e;
+      --bg-card: #18181b;
+      --border: #27272a;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-dim: #71717a;
+      --accent: #60a5fa;
+      --accent-hover: #3b82f6;
+      --bg-code: #09090b;
+      --bg-tag: #1e1e24;
+      --border-tag: #2d2d3a;
+      --mono: 'DM Mono', 'Menlo', 'Consolas', monospace;
+      --body-font: 'DM Sans', system-ui, -apple-system, sans-serif;
+      --head-font: 'Newsreader', Georgia, serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --bg-sidebar: #f8fafc;
+      --bg-card: #ffffff;
+      --border: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-dim: #94a3b8;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --bg-code: #f1f5f9;
+      --bg-tag: #eff6ff;
+      --border-tag: #dbeafe;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--body-font);
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Split Pane Layout */
+    .sidebar {
+      width: 40%;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: 2rem;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .main-content {
+      width: 60%;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 2rem 3rem;
+      background: var(--bg);
+      transition: background-color 0.3s;
+    }
+
+    /* Typography */
+    h1 { font-family: var(--head-font); font-size: 1.8rem; margin-bottom: 1rem; color: var(--accent); }
+    h2 { font-family: var(--head-font); font-size: 1.4rem; margin: 2rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--text-primary); }
+    h3 { font-family: var(--head-font); font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+    p { color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.95rem; }
+    
+    .meta-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    .meta { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0; }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 0.4rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .theme-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .theme-toggle svg { width: 14px; height: 14px; }
+    [data-theme="light"] .sun-icon { display: none; }
+    [data-theme="dark"] .moon-icon { display: none; }
+    body:not([data-theme]) .moon-icon { display: none; } /* Default is dark, so show sun */
+
+    /* DAG Container Styling */
+    .dag-container {
+      background: var(--bg-code);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      min-height: 400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .mermaid { width: 100%; background: transparent !important; border: none !important; }
+    
+    /* Mermaid Styling Overrides */
+    .mermaid svg { max-width: 100% !important; height: auto !important; }
+
+    /* Lemma Block */
+    .lemma-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .lemma-title { font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .lemma-tag { background: var(--bg-tag); color: var(--accent); font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-tag); }
+
+    /* Code Blocks */
+    pre {
+      background: var(--bg-code);
+      padding: 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+    code { font-family: var(--mono); font-size: 0.85rem; color: var(--text-primary); }
+
+    .lemma-block ul {
+      margin-left: 1.2rem;
+      margin-bottom: 1.2rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .lemma-block li {
+      margin-bottom: 0.4rem;
+    }
+    
+    /* Syntax Highlighting (simplified) */
+    .keyword { color: #c678dd; }
+    .definition { color: #61afef; }
+    .lemma { color: #98c379; }
+    .comment { color: #5c6370; font-style: italic; }
+
+    /* Light mode syntax overrides */
+    [data-theme="light"] .keyword { color: #a626a4; }
+    [data-theme="light"] .definition { color: #4078f2; }
+    [data-theme="light"] .lemma { color: #50a14f; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    .toc-sidebar { margin-top: 2rem; }
+    .toc-sidebar a { display: block; color: var(--text-dim); text-decoration: none; font-size: 0.85rem; margin-bottom: 0.5rem; transition: color 0.2s; }
+    .toc-sidebar a:hover { color: var(--accent); }
+
+    strong { color: var(--text-primary); }
+    em { color: var(--accent); }
+
+    .github-link {
+      color: var(--text-dim);
+      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .github-link:hover {
+      color: var(--accent);
+    }
+    .github-link svg {
+      width: 20px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="meta-container">
+    <div class="meta">UCSD DSC 291</div>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+      <!-- Sun Icon -->
+      <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 18v1m9-11h1M3 12H1m15.364-6.364l.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+      <!-- Moon Icon -->
+      <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      </svg>
+    </button>
+  </div>
+  <h1>Online Regret Bounds</h1>
+  <p>Lean 4 formalization of the $O(\sqrt{T})$ regret bound for Online Gradient Descent (OGD).</p>
+
+  <h3 style="margin-top: 2rem;">Dependency Graph</h3>
+  <div class="dag-container">
+    <!-- Rendered by Mermaid.js -->
+    <script>
+      const themeToggle = document.getElementById('theme-toggle');
+      const body = document.body;
+
+      const updateMermaid = async (isLight) => {
+        if (window.mermaid) {
+          const container = document.querySelector('.dag-container');
+          const diagram = `
+    flowchart TD
+        L1[DEF: FIRST ORDER CONVEXITY]
+        L2[DEF: LIPSCHITZ CONTINUITY]
+        L3[DEF: OGD UPDATE RULE]
+        L4[SQUARED DISTANCE EXPANSION]
+        L5[NON-EXPANSIVENESS OF CONVEX PROJECTION]
+        L6[STEP-WISE REGRET BOUND]
+        L7[INNER PRODUCT RELATION]
+        L8[REGRET DECOMPOSITION]
+        L9[OPTIMAL STEP SIZE]
+        L10a[INDUCTIVE BOUND]
+        L10b[FINAL THEOREM]
+
+        L1 --> L6
+        L3 --> L4
+        L5 --> L4
+        L4 --> L7
+        L6 --> L8
+        L7 --> L8
+        L8 --> L10a
+        L10a --> L10b
+        L2 --> L10b
+        L9 --> L10b
+
+        click L1 "#l1"
+        click L2 "#l2"
+        click L3 "#l3"
+        click L4 "#l4"
+        click L5 "#l5"
+        click L6 "#l6"
+        click L7 "#l7"
+        click L8 "#l8"
+        click L9 "#l9"
+        click L10a "#l10"
+        click L10b "#l10"
+
+        class L1,L2,L3,L9,L10b accent
+          `.trim();
+          
+          container.innerHTML = `<div class="mermaid">${diagram}</div>`;
+          
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: isLight ? 'default' : 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'inherit',
+            flowchart: { 
+              useMaxWidth: true, 
+              htmlLabels: true, 
+              curve: 'basis',
+              padding: 20
+            }
+          });
+          
+          await mermaid.run({
+            querySelector: '.mermaid',
+          });
+        }
+      };
+
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      body.setAttribute('data-theme', savedTheme);
+      setTimeout(() => updateMermaid(savedTheme === 'light'), 100);
+
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateMermaid(newTheme === 'light');
+      });
+    </script>
+  </div>
+
+  <div class="toc-sidebar">
+    <h3 style="font-size: 0.9rem; color: var(--zinc-100);">Contents</h3>
+    <a href="#l1">1. First-Order Convexity</a>
+    <a href="#l2">2. Lipschitz Continuity</a>
+    <a href="#l3">3. OGD Update Rule</a>
+    <a href="#l4">4. Squared Distance Expansion</a>
+    <a href="#l5">5. Projection Non-expansiveness</a>
+    <a href="#l6">6. Step-wise Regret Bound</a>
+    <a href="#l7">7. Inner Product Relation</a>
+    <a href="#l8">8. Regret Decomposition</a>
+    <a href="#l9">9. Optimal Step Size</a>
+    <a href="#l10">10. Final Regret Theorem</a>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="meta">Learning Theory</div>
+  
+  <h2>Formalizing Online Learning Regret Bounds in Lean 4</h2>
+  
+  <p>
+    We derive a rigorous upper bound on the <i>regret</i> of an online learner. Unlike batch optimization, we make no assumptions about the distribution of future data. Instead, we establish a foundational setup where the learner selects iterates from a convex set $\mathcal{K}$ and suffers losses from an arbitrary sequence of convex, Lipschitz functions $f_t$.
+  </p>
+
+  <p>
+    The following derivation establishes the global $O(\sqrt{T})$ rate by first analyzing the geometric stability of a single step and then accumulating these local bounds via induction.
+  </p>
+
+  <!-- Lemma 1 -->
+  <div class="lemma-block" id="l1">
+    <h3>Definition: First-Order Convexity Inequality</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$f(y) \ge f(x) + ⟪g, y - x⟫$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$x$ : The <strong>current iterate</strong> where the subgradient is evaluated.</li>
+      <li>$y$ : An <strong>arbitrary point</strong> in the domain (the comparator $u$ in later proofs).</li>
+      <li>$g$ : The <strong>subgradient vector</strong>, acting as a linear lower-bound for the function.</li>
+      <li>$y - x$ : The <strong>displacement vector</strong> from the current iterate to the target.</li>
+      <li>$⟪\cdot, \cdot⟫$ : The <strong>standard inner product</strong>, measuring directional alignment.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>Convexity is the "engine" of optimization. This specific formulation linearizes the function, replacing a complex global gap $f(y) - f(x)$ with a simple geometric interaction. This allows Lean to work with structural inner product properties rather than arbitrary function curves. We hope to achieve a way to bound objective losses using only local vector information.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">def</span> <span class="definition">convex_function_first_order_inequality</span> (f : E → ℝ) (g : E) (x : E) : <span class="keyword">Prop</span> :=
+  ∀ y : E, f y ≥ f x + ⟪g, y - x⟫</code></pre>
+  </div>
+
+  <!-- Lemma 2 -->
+  <div class="lemma-block" id="l2">
+    <h3>Definition: Lipschitz Continuity Assumption</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$\|g\| \le L$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$\|g\|$ : The magnitude or <strong>norm</strong> of the subgradient.</li>
+      <li>$L$ : A <strong>universal speed limit</strong> for the function's rate of change.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>Without this assumption, an adversary could choose a loss function with an infinitely steep gradient, catapulting the learner's state infinitely far away. This bounding property ensures that each discrete "jump" has a finite impact, allowing us to control the expansion of error terms.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">def</span> <span class="definition">lipschitz_continuous_def</span> (g : E) (L : ℝ) : <span class="keyword">Prop</span> :=
+  ‖g‖ ≤ L</code></pre>
+  </div>
+
+  <!-- Lemma 3 -->
+  <div class="lemma-block" id="l3">
+    <h3>Definition: OGD Update Rule</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$x_{t+1} = \Pi_{\mathcal{K}}(x_t - \eta_t g_t)$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$\eta$ : The <strong>learning rate</strong> or step size.</li>
+      <li>$\Pi_{\mathcal{K}}$ : The <strong>projection</strong> onto the feasible convex set.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>This rule defines the learner's trajectory. By moving against the gradient and projecting back to the set, we ensure the learner's decisions remain valid while aggressively seeking the minimum. It bridges the analytical properties of $f$ and the geometric trajectory of $\{x_t\}$.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">def</span> <span class="definition">ogd_update_rule_def</span> (P : Projection E) (η : ℝ) (x g : E) : E :=
+  P.proj (x - η • g)</code></pre>
+  </div>
+
+  <!-- Lemma 4 -->
+  <div class="lemma-block" id="l4">
+    <h3>Lemma: Squared Distance Expansion</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$\text{dist}(x_{t+1}, u)^2 \le \text{dist}(x_t, u)^2 - 2\eta\langle g_t, x_t - u \rangle + \eta^2 \|g_t\|^2$$
+
+    <p><strong>Goal:</strong></p>
+    <p>This reveals the fundamental tension in OGD: the alignment term <b>shrinks</b> our distance to the goal (if the gradient points "correctly"), while the noise term <b>expands</b> it as a penalty for the discrete step size. We hope to use this to show that the learner consistently moves closer to the optimum $u$ on average.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_step_expansion_squared_distance</span> (P : Projection E) (η : ℝ) (x g u : E)
+    (hu : ogd_projection_step_feasibility P u) :
+    dist (ogd_update_rule_def P η x g) u ^ 2
+      ≤ dist x u ^ 2 - 2 * η * ⟪g, x - u⟫ + η ^ 2 * ‖g‖ ^ 2 := <span class="keyword">by</span>
+  <span class="comment">-- Apply Nonexpansiveness</span>
+  <span class="keyword">have</span> h_nonexp := P.nonexpansive.dist_le_mul (x - η • g) u
+  <span class="comment">-- Clean up projection and constant</span>
+  rw [hu] <span class="keyword">at</span> h_nonexp
+  replace h_nonexp : dist (ogd_update_rule_def P η x g) u ≤ dist (x - η • g) u := <span class="keyword">by</span>
+    simpa <span class="keyword">using</span> h_nonexp
+  <span class="comment">-- Square both sides</span>
+  <span class="keyword">have</span> h_sq : dist (ogd_update_rule_def P η x g) u ^ 2 ≤ dist (x - η • g) u ^ 2 := <span class="keyword">by</span>
+    gcongr
+  <span class="comment">-- Move from 'dist' to 'norm'</span>
+  rw [dist_eq_norm, dist_eq_norm] <span class="keyword">at</span> h_sq ⊢
+  <span class="comment">-- Expand quadratic form</span>
+  refine h_sq.trans ?_
+  rw [sub_right_comm, norm_sub_sq_real]
+  <span class="comment">-- Simplify algebra</span>
+  simp only [inner_smul_right, norm_smul, Real.norm_eq_abs]
+  <span class="comment">-- η² identity</span>
+  <span class="keyword">have</span> h_eta_sq : (|η| * ‖g‖) ^ 2 = η ^ 2 * ‖g‖ ^ 2 := <span class="keyword">by</span>
+    rw [mul_pow, sq_abs]
+  rw [h_eta_sq, real_inner_comm]
+  ring_nf
+  apply le_refl</code></pre>
+  </div>
+
+  <!-- Lemma 5 -->
+  <div class="lemma-block" id="l5">
+    <h3>Lemma: Non-Expansiveness of Convex Projection</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$\text{dist}(\Pi_{\mathcal{K}}(y), \Pi_{\mathcal{K}}(u)) \le \text{dist}(y, u)$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$\Pi_{\mathcal{K}}$ : The <strong>projection operator</strong> onto the closed convex set $\mathcal{K}$.</li>
+      <li>$y$ : The point in space being <strong>mapped</strong> into the set.</li>
+      <li>$u$ : A target point, typically the <strong>optimum</strong>.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>Projection onto a closed convex set is a <strong>contraction</strong>. This ensures that the projection step in the OGD update never pushes us further away from the optimal point $u$.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_projection_nonexpansive_property</span> (P : Projection E) (η : ℝ) (x g u : E) :
+    dist (ogd_update_rule_def P η x g) (P.proj u) ≤ dist (x - η • g) u := <span class="keyword">by</span>
+  simpa [ogd_update_rule_def]
+    <span class="keyword">using</span> (P.nonexpansive.dist_le_mul (x - η • g) u)</code></pre>
+  </div>
+
+  <!-- Lemma 6 -->
+  <div class="lemma-block" id="l6">
+    <h3>Lemma: Step-wise Regret Upper Bound</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$f(x) - f(u) \le ⟪g, x - u⟫$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$f(x) - f(u)$ : The <strong>instantaneous regret</strong> at round $t$.</li>
+      <li>$⟪g, x - u⟫$ : The <strong>linearized surrogate</strong> for the objective gap.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>We cannot see the "optimal" loss $f(u)$ directly. This lemma shows that the alignment between the gradient and our <strong>error vector</strong> $(x-u)$ provides a surrogate measure for our loss. Bounding this inner product automatically bounds our regret.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">lemma</span> <span class="lemma">step_regret_convexity_upper_bound</span> (f : E → ℝ) (g x u : E)
+    (hconv : convex_function_first_order_inequality f g x) :
+    f x - f u ≤ ⟪g, x - u⟫ := <span class="keyword">by</span>
+  <span class="comment">-- Apply convexity at u</span>
+  <span class="keyword">have</span> h := hconv u
+  <span class="comment">-- Rearrange inequality</span>
+  <span class="keyword">have</span> h' : f x - f u ≤ -⟪g, u - x⟫ := <span class="keyword">by</span> linarith
+  <span class="comment">-- Use inner product properties to swap arguments</span>
+  <span class="keyword">have</span> hx : ⟪g, x - u⟫ = -⟪g, u - x⟫ := <span class="keyword">by</span> rw [← inner_neg_right, neg_sub]
+  linarith [hx]</code></pre>
+  </div>
+
+  <!-- Lemma 7 -->
+  <div class="lemma-block" id="l7">
+    <h3>Lemma: Inner Product to Distance Progress Relation</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$2 * \eta * ⟪g, x - u⟫ \le \text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$\text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2$ : The <strong>squared distance progress</strong> toward the optimum.</li>
+      <li>$\eta^2 \|g\|^2$ : The <strong>step-size penalty</strong> or noise term introduced by discretization.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>Rearranging Lemma 4 to isolate the inner product term. This establishes that progress toward the optimum is a "proxy" for low instantaneous regret.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">lemma</span> <span class="lemma">step_regret_inner_product_to_distance_relation</span> (P : Projection E) (η : ℝ)
+    (x g u : E) (hu : ogd_projection_step_feasibility P u) :
+    2 * η * ⟪g, x - u⟫
+      ≤ dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2 := <span class="keyword">by</span>
+  <span class="comment">-- Invoke main squared distance expansion</span>
+  <span class="keyword">have</span> h := ogd_step_expansion_squared_distance (P := P) (η := η) (x := x) (g := g) (u := u) hu
+  <span class="comment">-- Algebraically rearrange to bound inner product</span>
+  linarith</code></pre>
+  </div>
+
+  <!-- Lemma 8 -->
+  <div class="lemma-block" id="l8">
+    <h3>Lemma: Single-Step Regret Decomposition</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$f(x) - f(u) \le \frac{\text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2}{2\eta}$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$\frac{1}{2\eta}$ : The <strong>normalization factor</strong> required to convert distance into function value units.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>We express round $t$ regret as a sum of <strong>progress</strong> (change in distance) and <strong>noise</strong>. If we suffer high regret, we <b>must</b> have made significant progress toward $u$.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">lemma</span> <span class="lemma">step_regret_decomposition_inequality</span> (f : E → ℝ) (g x u : E)
+    (hconv : convex_function_first_order_inequality f g x)
+    (P : Projection E) (η : ℝ) (hu : ogd_projection_step_feasibility P u)
+    (hη_pos : 0 < η) :
+    f x - f u ≤ (dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2) / (2 * η) := <span class="keyword">by</span>
+  <span class="comment">-- Bound objective difference via subgradient</span>
+  <span class="keyword">have</span> h₁ : f x - f u ≤ ⟪g, x - u⟫ := step_regret_convexity_upper_bound f g x u hconv
+  <span class="comment">-- Bound subgradient via distance progress</span>
+  <span class="keyword">have</span> h₂ : 2 * η * ⟪g, x - u⟫ ≤ dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2 :=
+    step_regret_inner_product_to_distance_relation P η x g u hu
+  <span class="comment">-- Divide by 2η (valid since η > 0)</span>
+  <span class="keyword">have</span> h₄ : ⟪g, x - u⟫ ≤ (dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2) / (2 * η) := <span class="keyword">by</span>
+    rw [le_div_iff₀ (by linarith)]
+    linarith
+  <span class="comment">-- Combine bounds</span>
+  linarith</code></pre>
+  </div>
+
+  <!-- Lemma 9 -->
+  <div class="lemma-block" id="l9">
+    <h3>Lemma: Optimal Step Size Balancing</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$\frac{D^2}{2\eta} + \frac{\eta L^2 T}{2} = DL\sqrt{T} \text{ where } \eta = \frac{D}{L\sqrt{T}}$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$D$ : The <strong>diameter</strong> or maximum distance from $x_0$ to $u$.</li>
+      <li>$L$ : The <strong>Lipschitz constant</strong> bounding gradient norms.</li>
+      <li>$T$ : The <strong>time horizon</strong> or total number of steps.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>Solve for the $\eta$ that minimizes the aggregate bound $\frac{D^2}{2\eta} + \frac{\eta L^2 T}{2}$. Setting $\eta = \frac{D}{L\sqrt{T}}$ balances the initial error and cumulative noise perfectly.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_regret_optimal_step_size_choice</span> (D L T : ℝ) (hD : 0 < D) (hL : 0 < L) (hT : 0 < T) :
+    <span class="keyword">let</span> η := D / (L * Real.sqrt T)
+    D^2 / (2 * η) + η * L^2 * T / 2 = D * L * Real.sqrt T := <span class="keyword">by</span>
+  intro η
+  <span class="comment">-- Simplify root properties</span>
+  <span class="keyword">have</span> h_sqrt : (Real.sqrt T) * (Real.sqrt T) = T := Real.mul_self_sqrt (by positivity)
+  <span class="keyword">have</span> h_L2_T : L^2 * T = (L * Real.sqrt T)^2 := <span class="keyword">by</span>
+    calc L^2 * T
+      _ = L^2 * ((Real.sqrt T) * (Real.sqrt T)) := <span class="keyword">by</span> rw [h_sqrt]
+      _ = L^2 * (Real.sqrt T)^2 := <span class="keyword">by</span> ring
+      _ = (L * Real.sqrt T)^2 := <span class="keyword">by</span> ring
+  <span class="comment">-- Positivity and non-zero invariants</span>
+  <span class="keyword">have</span> hx_pos : 0 < L * Real.sqrt T := <span class="keyword">by</span> positivity
+  <span class="keyword">have</span> hD_ne : D ≠ 0 := ne_of_gt hD
+  <span class="keyword">have</span> hx_ne : L * Real.sqrt T ≠ 0 := ne_of_gt hx_pos
+  <span class="comment">-- First fraction reduction</span>
+  <span class="keyword">have</span> H1 : D^2 / (2 * (D / (L * Real.sqrt T))) = D * (L * Real.sqrt T) / 2 := <span class="keyword">by</span>
+    rw [mul_div_assoc', div_div_eq_mul_div]
+    <span class="keyword">have</span> : D^2 * (L * Real.sqrt T) / (2 * D) = D * (D * (L * Real.sqrt T)) / (D * 2) := <span class="keyword">by</span> ring
+    rw [this, mul_div_mul_left _ _ hD_ne]
+  <span class="comment">-- Second fraction reduction</span>
+  <span class="keyword">have</span> H2 : (D / (L * Real.sqrt T)) * (L^2 * T) / 2 = D * (L * Real.sqrt T) / 2 := <span class="keyword">by</span>
+    rw [h_L2_T]
+    <span class="keyword">have</span> : (D / (L * Real.sqrt T)) * (L * Real.sqrt T)^2 / 2 = D * (L * Real.sqrt T) * (L * Real.sqrt T) / (L * Real.sqrt T) / 2 := <span class="keyword">by</span> ring
+    rw [this, mul_div_cancel_right₀ _ hx_ne]
+  <span class="comment">-- Combine</span>
+  calc D^2 / (2 * (D / (L * Real.sqrt T))) + (D / (L * Real.sqrt T)) * L^2 * T / 2
+    _ = D^2 / (2 * (D / (L * Real.sqrt T))) + (D / (L * Real.sqrt T)) * (L^2 * T) / 2 := <span class="keyword">by</span> ring
+    _ = D * (L * Real.sqrt T) / 2 + D * (L * Real.sqrt T) / 2 := <span class="keyword">by</span> rw [H1, H2]
+    _ = D * L * Real.sqrt T := <span class="keyword">by</span> ring</code></pre>
+  </div>
+
+  <!-- Lemma 10 -->
+  <div class="lemma-block" id="l10">
+    <h3>Theorem: The Final $O(\sqrt{T})$ Regret Bound</h3>
+    
+    <p><strong>Claim:</strong></p>
+    $$\sum_{t=1}^T (f_t(x_t) - f_t(u)) \le DL\sqrt{T}$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$\sum (f_t(x_t) - f_t(u))$ : The <strong>cumulative regret</strong> accumulated over $T$ iterations.</li>
+      <li>$O(\sqrt{T})$ : The <strong>sublinear growth rate</strong>, indicating the average regret $\to 0$.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>Summing Lemma 8 over rounds. Distances <b>telescope</b>, leaving only initial error and noise. The <b>average</b> regret vanishes as $T \to \infty$. This proves OGD is a "no-regret" learner.</p>
+
+    <p><strong>Lean 4 Code:</strong></p>
+    <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_regret_final_rate_theorem</span> (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ → E) (u : E) (D L : ℝ)
+    (hD : 0 < D) (hL : 0 < L) (hT : 0 < T)
+    (h_dist : dist (x 0) u ≤ D)
+    (h_lipschitz : ∀ t, t < T → ‖g t‖ ≤ L)
+    (h_step : ∀ t, t < T → f t (x t) - f t u ≤ (dist (x t) u ^ 2 - dist (x (t + 1)) u ^ 2 + (D / (L * Real.sqrt T)) ^ 2 * ‖g t‖ ^ 2) / (2 * (D / (L * Real.sqrt T)))) :
+    (∑ t ∈ Finset.range T, (f t (x t) - f t u)) ≤ D * L * Real.sqrt (T:ℝ) := <span class="keyword">by</span>
+  <span class="keyword">have</span> hT_real : (0:ℝ) < T := <span class="keyword">by</span> exact Nat.cast_pos.mpr hT
+  set η := D / (L * Real.sqrt T)
+  <span class="keyword">have</span> h_eta_pos : 0 < η := <span class="keyword">by</span> positivity
+
+  <span class="comment">-- Apply Inductive Accumulation</span>
+  <span class="keyword">have</span> h_bound := ogd_regret_inductive_bound T f g x u η h_step
+
+  <span class="comment">-- Bound Subgradient Magnitudes (Lipschitz assumption over time T)</span>
+  <span class="keyword">have</span> h_g_sum : (∑ t ∈ Finset.range T, ‖g t‖ ^ 2) ≤ (T:ℝ) * L ^ 2 := <span class="keyword">by</span>
+    calc (∑ t ∈ Finset.range T, ‖g t‖ ^ 2)
+      _ ≤ ∑ t ∈ Finset.range T, L ^ 2 := <span class="keyword">by</span>
+        apply Finset.sum_le_sum
+        intro t ht
+        <span class="keyword">have</span> h_t_lt : t < T := Finset.mem_range.mp ht
+        <span class="keyword">have</span> hl := h_lipschitz t h_t_lt
+        gcongr
+      _ = (T:ℝ) * L ^ 2 := <span class="keyword">by</span> simp
+
+  <span class="comment">-- Initial Distance Condition (Domain size invariant D)</span>
+  <span class="keyword">have</span> h_dist_sq : dist (x 0) u ^ 2 ≤ D ^ 2 := <span class="keyword">by</span>
+    <span class="keyword">have</span> hD_pos : 0 ≤ D := <span class="keyword">by</span> linarith
+    gcongr
+
+  <span class="comment">-- Drop non-positive final trailing distance</span>
+  <span class="keyword">have</span> h_dist_T_pos : 0 ≤ dist (x T) u ^ 2 := <span class="keyword">by</span> positivity
+
+  <span class="comment">-- Combine parts to substitute maximum values in the inductive numerator bounds</span>
+  <span class="keyword">have</span> h_num : dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2 ≤ D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2) := <span class="keyword">by</span>
+    <span class="keyword">have</span> h_part1 : dist (x 0) u ^ 2 - dist (x T) u ^ 2 ≤ D ^ 2 := <span class="keyword">by</span> linarith
+    <span class="keyword">have</span> h_part2 : η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2 ≤ η ^ 2 * ((T:ℝ) * L ^ 2) := <span class="keyword">by</span> gcongr
+    linarith
+
+  <span class="keyword">have</span> h_div : (dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2) / (2 * η) ≤ (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η) := <span class="keyword">by</span>
+    gcongr
+
+  <span class="comment">-- Rearrange division fraction towards substitution of optimal step-size lemma</span>
+  <span class="keyword">have</span> h_split : (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η) = D ^ 2 / (2 * η) + η * L ^ 2 * (T:ℝ) / 2 := <span class="keyword">by</span>
+    calc (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η)
+      _ = D ^ 2 / (2 * η) + η ^ 2 * ((T:ℝ) * L ^ 2) / (2 * η) := <span class="keyword">by</span> rw [add_div]
+      _ = D ^ 2 / (2 * η) + η * L ^ 2 * (T:ℝ) / 2 := <span class="keyword">by</span>
+        congr 1
+        <span class="keyword">have</span> h_eta_ne : η ≠ 0 := ne_of_gt h_eta_pos
+        calc η ^ 2 * ((T:ℝ) * L ^ 2) / (2 * η)
+          _ = (η * η) * ((T:ℝ) * L ^ 2) / (η * 2) := <span class="keyword">by</span> ring
+          _ = η * (η * ((T:ℝ) * L ^ 2)) / (η * 2) := <span class="keyword">by</span> ring
+          _ = η * ((T:ℝ) * L ^ 2) / 2 := <span class="keyword">by</span> rw [mul_div_mul_left _ _ h_eta_ne]
+          _ = η * L ^ 2 * (T:ℝ) / 2 := <span class="keyword">by</span> ring
+
+  <span class="comment">-- Apply Optimal Step Size identity</span>
+  <span class="keyword">have</span> h_opt := ogd_regret_optimal_step_size_choice D L (T:ℝ) hD hL hT_real
+  linarith</code></pre>
+  </div>
+
+  <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.8rem; text-align: center; display: flex; flex-direction: column; align-items: center;">
+    <div>UCSD &copy; 2026 James Doan</div>
+    <a href="#" class="github-link" title="Project Repository">
+      <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.744.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+      </svg>
+    </a>
+  </footer>
+</div>
+
+</body>
+</html>
