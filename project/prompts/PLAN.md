@@ -62,3 +62,33 @@ The project is complete only when:
 # Lessons Learned
 - Used `div_div_eq_mul_div` and explicit field simplifications (`mul_div_mul_left`, `mul_div_cancel_right₀`) to handle complex real division manipulations within `ring`.
 - Avoided `Finset.sum` telescoping rules by providing an explicit inductive proof on `T` for regret accumulation, resolving the step regret bound gracefully with `add_le_add` and `linarith`.
+
+## TODO
+
+Act as an expert frontend engineer and technical writer. Compile a single, self-contained static HTML project (`regret.htm`) dedicated to the formalization of Regret Bounds in Lean 4.
+
+### Local Asset Integration
+
+Instead of pulling assets from online CDNs, build the file to run entirely offline by linking to the local files inside the `~/regret_files` directory:
+
+- Load the local stylesheet: `~/regret_files/css2.css`
+- Inject KaTeX for math rendering using the local stylesheet: `~/regret_files/katex.min.css`
+- Inject KaTeX script functionality using the local scripts: `~/regret_files/katex.min.js` and `~/regret_files/autorender.min.js` (configured to automatically parse and render the LaTeX equations on page load).
+
+> *Note: Since Tailwind CSS is not present in the local files, write standard semantic HTML and utilize custom CSS embedded in the head (or within `css2.css`) to achieve the required layout styling.*
+
+## Context
+
+- All definitions are found in `~/math/MyProject/Basic.lean`, use this as the meat of the project
+- List of topics noted in `~/prompts/AGENTS.md`: # AGENTS.md > ## Lean 4 Online Gradient Descent Formalization
+- Initiate a write up using the background information in `slides/`
+- Use the template given in `~slides/01_files` and `01.htm`
+- Do not read anything in `.lake/`
+
+## Deliverables
+
+- `~/regret.htm`
+- `~/regret_files/autorender.min.js`
+- `~/regret_files/css2.css`
+- `~/regret_files/katex.min.css`
+- `~/regret_files/katex.min.js`
