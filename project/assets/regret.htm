@@ -549,18 +549,18 @@
           const container = document.querySelector('.dag-container');
           const diagram = `
     flowchart TD
-        L1[DEF: FIRST ORDER CONVEXITY]
-        L2[DEF: LIPSCHITZ CONTINUITY]
-        L3[DEF: OGD UPDATE RULE]
-        L3b[DEF: OGD PROJECTION FEASIBILITY]
+        L1[FIRST ORDER CONVEXITY]
+        L2[LIPSCHITZ CONTINUITY]
+        L3[OGD UPDATE RULE]
+        L3b[OGD PROJECTION FEASIBILITY]
         L4[SQUARED DISTANCE EXPANSION]
         L5[NON-EXPANSIVENESS OF CONVEX PROJECTION]
         L6[STEP-WISE REGRET BOUND]
         L7[INNER PRODUCT RELATION]
         L8[REGRET DECOMPOSITION]
         L9[OPTIMAL STEP SIZE]
-        L9b[LEMMA: INDUCTIVE BOUND]
-        L10[FINAL THEOREM]
+        L9b[INDUCTIVE BOUND]
+        L10[REGRET BOUND]
 
         L1 --> L6
         L3 --> L4
@@ -758,9 +758,9 @@ structure Projection (E : Type u) [PseudoMetricSpace E] where
       <div class="details-body">
         <p>Convexity is the fundamental structural assumption that makes online learning tractable. At its core, it says: a function lies above all of its tangent lines. For a differentiable convex function $f$, at any point $x$ with gradient $g = \nabla f(x)$, we have:</p>
         $$f(y) \ge f(x) + \langle g, y - x \rangle \quad \forall y.$$
-        <p>This inequality is remarkable because it <strong>linearizes</strong> the function: instead of reasoning about the full global shape of $f$, we only need the local gradient $g$ and a simple inner product. The term $\langle g, y - x \rangle$ captures how much the function <em>could</em> change if we move from $x$ to $y$, under the best possible (linear) approximation.</p>
-        <p>In our OGD proof, this lemma will let us replace the true objective gap $f_t(x_t) - f_t(u)$ — which we cannot directly control — with the inner product $\langle g_t, x_t - u \rangle$, which we <em>can</em> control through the geometry of the update step. This is the "linearization reduction" described in §7.3–7.4 of the theory notes.</p>
-        <p><strong>Key insight:</strong> Convexity hands us a <em>free linear lower bound</em> at every point. The entire OGD analysis flows from this single inequality.</p>
+        <p>This inequality is remarkable because it <strong>linearizes</strong> the function; instead of reasoning about the full global shape of $f$, we only need the local gradient $g$ and a simple inner product. The term $\langle g, y - x \rangle$ captures how much the function <em>could</em> change if we move from $x$ to $y$, under the best possible (linear) approximation.</p>
+        <p>This lemma will let us replace the true objective gap $f_t(x_t) - f_t(u)$, which we cannot directly control, with the inner product $\langle g_t, x_t - u \rangle$, which we <em>can</em> control through the geometry of the update step.</p>
+        <p><strong>Note:</strong> Convexity hands us a <em>free linear lower bound</em> at every point. The entire OGD analysis flows from this single inequality.</p>
       </div>
     </details>
 
@@ -801,7 +801,7 @@ def convex_function_first_order_inequality (f : E → ℝ) (g : E) (x : E) : Pro
       <summary>Full Narrative</summary>
       <div class="details-body">
         <p>Lipschitz continuity is the second pillar of the OGD proof. It constrains how fast the loss functions can change: for any two points $w, w'$ in the domain, $|f(w) - f(w')| \le L \|w - w'\|$. For differentiable convex functions, this is equivalent to bounding the gradient norm: $\|\nabla f(w)\| \le L$ for all $w$.</p>
-        <p>Why is this essential? In OGD, the update step moves a distance $\eta \|g_t\|$ before projection. If gradients could be arbitrarily large, a single adversarial loss could throw the learner's iterate outside any bounded region, making the distance-tracking argument impossible.</p>
+        <p>In OGD, the update step moves a distance $\eta \|g_t\|$ before projection. If gradients could be arbitrarily large, a single adversarial loss could throw the learner's iterate outside any bounded region, making the distance-tracking argument impossible.</p>
         <p>The Lipschitz constant $L$ appears twice in the final bound $DL\sqrt{T}$: once through the noise term $\eta^2 \|g_t\|^2$ in the squared distance expansion, and once implicitly through the optimal step size $\eta = D/(L\sqrt{T})$. It sets the <em>scale</em> at which the learner must balance exploration (stepping far) and stability (staying close to the comparator).</p>
       </div>
     </details>
@@ -842,9 +842,8 @@ def lipschitz_continuous_def (g : E) (L : ℝ) : Prop :=
     <details class="lemma-details">
       <summary>Full Narrative</summary>
       <div class="details-body">
-        <p>The OGD update is remarkably simple: take a step opposite the current gradient, then project back onto the feasible set. Despite its simplicity, it is the Euclidean special case of a much broader family — Mirror Descent — as shown in §11.3 of the theory notes.</p>
-        <p>The projection step $\Pi_{\mathcal{K}}$ is critical: without it, the iterate could drift outside $\mathcal{K}$, violating the problem constraints. The non-expansiveness of convex projections (Lemma 5) ensures that this correction never harms convergence: $\|\Pi_{\mathcal{K}}(v) - \Pi_{\mathcal{K}}(u)\| \le \|v - u\|$.</p>
-        <p>In the dual-averaging perspective (§10.1), OGD maintains a running sum of gradients in the dual space and maps back to the primal via the inverse of $\nabla \psi$ where $\psi(w) = \frac{1}{2}\|w\|_2^2$. The recursive form $x_{t+1} = x_t - \eta g_t$ (before projection) falls out because $\nabla \psi$ and its inverse are both the identity for the Euclidean potential.</p>
+        <p>The OGD update is remarkably simple: take a step opposite the current gradient, then project back onto the feasible set. Despite its simplicity however, it is the Euclidean special case of a much broader family, Mirror Descent.</p>
+        <p>The projection step $\Pi_{\mathcal{K}}$ is critical; without it, the iterate could drift outside $\mathcal{K}$, violating the problem constraints. The non-expansiveness of convex projections (Lemma 6) ensures that this correction never harms convergence: $\|\Pi_{\mathcal{K}}(v) - \Pi_{\mathcal{K}}(u)\| \le \|v - u\|$.</p>
       </div>
     </details>
 
@@ -885,7 +884,7 @@ def ogd_update_rule_def (P : Projection E) (η : ℝ) (x g : E) : E :=
       <summary>Full Narrative</summary>
       <div class="details-body">
         <p>Before we can analyze the distance between our iterate $x_t$ and the comparator $u$, we must ensure $u$ is actually in the feasible set $\mathcal{K}$. This definition formally states that projecting a point $u$ that is already in $\mathcal{K}$ onto $\mathcal{K}$ returns $u$ itself.</p>
-        <p>In OGD, we typically assume $u \in \mathcal{K}$. This property is used in the squared distance expansion (Lemma 4) to justify the projection step.</p>
+        <p>In OGD, we typically assume $u \in \mathcal{K}$. This property is used in the squared distance expansion (Lemma 5) to justify the projection step.</p>
       </div>
     </details>
 
@@ -911,18 +910,18 @@ def ogd_projection_step_feasibility (P : Projection E) (u : E) : Prop :=
     </div>
     
     <p><strong>Claim:</strong></p>
-    $$\text{dist}(x_{t+1}, u)^2 \le \text{dist}(x_t, u)^2 - 2\eta\langle g_t, x_t - u \rangle + \eta^2 \|g_t\|^2$$
+    $$\operatorname{dist}(x_{t+1}, u)^2 \le \operatorname{dist}(x_t, u)^2 - 2\eta\langle g_t, x_t - u \rangle + \eta^2 \|g_t\|^2$$
 
     <p><strong>Goal:</strong></p>
-    <p>This reveals the fundamental tension in OGD: the alignment term <b>shrinks</b> our distance to the goal, while the noise term <b>expands</b> it as a penalty for the discrete step size.</p>
+    <p>This reveals the fundamental tension in OGD; the alignment term <b>shrinks</b> our distance to the goal, while the noise term <b>expands</b> it as a penalty for the discrete step size.</p>
 
     <details class="lemma-details">
       <summary>Full Narrative</summary>
       <div class="details-body">
         <p>This is the workhorse lemma of the entire OGD proof. It relates the <em>change in distance</em> to the comparator $u$ across one OGD step to two quantities: the alignment $\langle g_t, x_t - u\rangle$ (how well the gradient points toward $u$) and the squared gradient norm $\|g_t\|^2$ (a penalty for moving at all).</p>
-        <p>The derivation proceeds in two stages. First, by the non-expansiveness of projection (Lemma 5), $\text{dist}(x_{t+1}, u) \le \text{dist}(x_t - \eta g_t, u)$. Squaring both sides and expanding the squared distance of the unconstrained step gives:</p>
+        <p>The derivation proceeds in two stages. First, by the non-expansiveness of projection (Lemma 6), $\operatorname{dist}(x_{t+1}, u) \le \operatorname{dist}(x_t - \eta g_t, u)$. Squaring both sides and expanding the squared distance of the unconstrained step gives:</p>
         $$\|(x_t - u) - \eta g_t\|^2 = \|x_t - u\|^2 - 2\eta \langle g_t, x_t - u \rangle + \eta^2 \|g_t\|^2.$$
-        <p>The three-term structure is revealing: the middle term can be <em>negative</em> (if the gradient aligns with the direction toward $u$), which shrinks the distance. The final term is always non-negative — a tax on moving that cannot be avoided. This tension between alignment and noise drives the entire regret analysis.</p>
+        <p>The three-term structure is revealing: the middle term can be <em>negative</em> (if the gradient aligns with the direction toward $u$), which shrinks the distance. The final term is always non-negative; a tax on moving that cannot be avoided. This tension between alignment and noise drives the entire regret analysis.</p>
       </div>
     </details>
 
@@ -972,7 +971,7 @@ lemma ogd_step_expansion_squared_distance (P : Projection E) (η : ℝ) (x g u :
     </div>
     
     <p><strong>Claim:</strong></p>
-    $$\text{dist}(\Pi_{\mathcal{K}}(y), \Pi_{\mathcal{K}}(u)) \le \text{dist}(y, u)$$
+    $$\operatorname{dist}(\Pi_{\mathcal{K}}(y), \Pi_{\mathcal{K}}(u)) \le \operatorname{dist}(y, u)$$
 
     <p><strong>Notation:</strong></p>
     <ul>
@@ -989,7 +988,7 @@ lemma ogd_step_expansion_squared_distance (P : Projection E) (η : ℝ) (x g u :
       <div class="details-body">
         <p>A projection $\Pi_{\mathcal{K}}(v) = \arg\min_{w \in \mathcal{K}} \|w - v\|$ maps any point to its nearest neighbor in $\mathcal{K}$. The non-expansiveness property states that this map is a contraction: it never increases distances. Formally, $\|\Pi_{\mathcal{K}}(y) - \Pi_{\mathcal{K}}(u)\| \le \|y - u\|$.</p>
         <p>This is critical for OGD because the update $x_{t+1} = \Pi_{\mathcal{K}}(x_t - \eta g_t)$ involves a projection. Without non-expansiveness, the projection could <em>increase</em> the distance to $u$, potentially unraveling the entire distance-based argument. With it, we know that projection can only help (or at least not hurt) convergence.</p>
-        <p>In Lean, this property is provided by mathlib's `Projection` structure, which bundles the projection operator with its proof of non-expansiveness. The lemma above is essentially a wrapper that applies this theorem to the specific arguments in the OGD update.</p>
+        <p>In Lean, this property is provided by mathlib's <code>Projection</code> structure, which bundles the projection operator with its proof of non-expansiveness. The lemma above is essentially a wrapper that applies this theorem to the specific arguments in the OGD update.</p>
       </div>
     </details>
 
@@ -1034,8 +1033,8 @@ lemma ogd_projection_nonexpansive_property (P : Projection E) (η : ℝ) (x g u 
       <div class="details-body">
         <p>This lemma bridges the objective gap (what we care about) with an inner product (what we can algebraically manipulate). Starting from the first-order convexity inequality (Lemma 1) with $y = u$, we have:</p>
         $$f(u) \ge f(x) + \langle g, u - x \rangle.$$
-        <p>Rearranging: $f(x) - f(u) \le \langle g, x - u \rangle$. The inner product $\langle g, x - u \rangle$ measures how much the gradient at $x$ "points toward" $u$. If $g$ is perfectly anti-aligned with $x - u$ (i.e., the gradient points directly toward the optimum), this inner product is negative, and the instantaneous regret is bounded by a negative number — the learner is <em>better</em> than the comparator at this round.</p>
-        <p>This is the "linearization reduction" from §7.4 of the theory: convexity lets us replace each $\ell_t(w)$ with its tangent-plane lower bound $\tilde{\ell}_t(w) = \ell_t(w_t) + \langle g_t, w - w_t \rangle$, reducing general convex losses to linear ones. The total regret on the original losses is bounded by the regret on these linear surrogates.</p>
+        <p>Rearranging gives $f(x) - f(u) \le \langle g, x - u \rangle$. The inner product $\langle g, x - u \rangle$ measures how much the gradient at $x$ "points toward" $u$. If $g$ is perfectly anti-aligned with $x - u$ (i.e., the gradient points directly toward the optimum), this inner product is negative, and the instantaneous regret is bounded by a negative number; the learner is <em>better</em> than the comparator at this round.</p>
+        <p>Convexity lets us replace each $\ell_t(w)$ with its tangent-plane lower bound $\tilde{\ell}_t(w) = \ell_t(w_t) + \langle g_t, w - w_t \rangle$, reducing general convex losses to linear ones. The total regret on the original losses is bounded by the regret on these linear surrogates.</p>
       </div>
     </details>
 
@@ -1069,24 +1068,24 @@ lemma step_regret_convexity_upper_bound (f : E → ℝ) (g x u : E)
     </div>
     
     <p><strong>Claim:</strong></p>
-    $$2 * \eta * ⟪g, x - u⟫ \le \text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2$$
+    $$2 * \eta * ⟪g, x - u⟫ \le \operatorname{dist}(x, u)^2 - \operatorname{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2$$
 
     <p><strong>Notation:</strong></p>
     <ul>
-      <li>$\text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2$ : The <strong>squared distance progress</strong> toward the optimum.</li>
+      <li>$\operatorname{dist}(x, u)^2 - \operatorname{dist}(x_{t+1}, u)^2$ : The <strong>squared distance progress</strong> toward the optimum.</li>
       <li>$\eta^2 \|g\|^2$ : The <strong>step-size penalty</strong> or noise term introduced by discretization.</li>
     </ul>
 
     <p><strong>Goal:</strong></p>
-    <p>Rearranging Lemma 4 to isolate the inner product term. This establishes that progress toward the optimum is a "proxy" for low instantaneous regret.</p>
+    <p>Rearranging Lemma 5 to isolate the inner product term. This establishes that progress toward the optimum is a "proxy" for low instantaneous regret.</p>
 
     <details class="lemma-details">
       <summary>Full Narrative</summary>
       <div class="details-body">
-        <p>Lemma 4 gave us an upper bound on $\text{dist}(x_{t+1}, u)^2$. To connect it with regret, we need to isolate the inner product term $\langle g, x - u \rangle$ that appeared in Lemma 6. Rearranging the squared distance expansion:</p>
-        $$2\eta \langle g, x - u \rangle \le \text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2.$$
-        <p>This is a purely algebraic consequence of Lemma 4 — it follows directly by moving terms with `linarith` in Lean. Yet it represents a profound conceptual shift: the inner product (which bounds regret) is now expressed as a combination of <em>distance progress</em> and <em>noise</em>.</p>
-        <p>The structure foreshadows the final regret bound: after summing over $T$ rounds, the distance terms telescope (leaving only the initial $\text{dist}(x_0, u)^2$), and the noise terms accumulate to $T \cdot \eta^2 L^2$. The optimal step size $\eta$ will balance these two contributions.</p>
+        <p>Lemma 5 gave us an upper bound on $\operatorname{dist}(x_{t+1}, u)^2$. To connect it with regret, we need to isolate the inner product term $\langle g, x - u \rangle$ that appeared in Lemma 7. Rearranging the squared distance expansion:</p>
+        $$2\eta \langle g, x - u \rangle \le \operatorname{dist}(x, u)^2 - \operatorname{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2.$$
+        <p>This is a purely algebraic consequence of Lemma 5; it follows directly by moving terms with <code>linarith</code> in Lean. This calculation represents a profound conceptual shift: the inner product (which bounds regret) is now expressed as a combination of <em>distance progress</em> and <em>noise</em>.</p>
+        <p>The structure foreshadows the final regret bound: after summing over $T$ rounds, the distance terms telescope (leaving only the initial $\operatorname{dist}(x_0, u)^2$), and the noise terms accumulate to $T \cdot \eta^2 L^2$. The optimal step size $\eta$ will balance these two contributions.</p>
       </div>
     </details>
 
@@ -1118,7 +1117,7 @@ lemma step_regret_inner_product_to_distance_relation (P : Projection E) (η : �
     </div>
     
     <p><strong>Claim:</strong></p>
-    $$f(x) - f(u) \le \frac{\text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2}{2\eta}$$
+    $$f(x) - f(u) \le \frac{\operatorname{dist}(x, u)^2 - \operatorname{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2}{2\eta}$$
 
     <p><strong>Notation:</strong></p>
     <ul>
@@ -1133,11 +1132,11 @@ lemma step_regret_inner_product_to_distance_relation (P : Projection E) (η : �
       <div class="details-body">
         <p>This lemma is the culmination of the single-step analysis. It chains together Lemmas 6 and 7:</p>
         <ol style="padding-left: 2ch; margin-left: 0;">
-          <li>From Lemma 6: $f(x) - f(u) \le \langle g, x - u \rangle$ (convexity bounds regret by inner product).</li>
-          <li>From Lemma 7: $2\eta \langle g, x - u \rangle \le \text{dist}(x, u)^2 - \text{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2$ (inner product bounded by distance progress).</li>
+          <li>From Lemma 7: $f(x) - f(u) \le \langle g, x - u \rangle$ (convexity bounds regret by inner product).</li>
+          <li>From Lemma 8: $2\eta \langle g, x - u \rangle \le \operatorname{dist}(x, u)^2 - \operatorname{dist}(x_{t+1}, u)^2 + \eta^2 \|g\|^2$ (inner product bounded by distance progress).</li>
           <li>Dividing the second inequality by $2\eta > 0$ and combining gives the result.</li>
         </ol>
-        <p>The final inequality $f(x) - f(u) \le (\text{progress} + \text{noise}) / (2\eta)$ has a beautiful interpretation: the instantaneous regret at round $t$ is at most the <em>distance shrinkage</em> toward $u$ plus a <em>discretization penalty</em>, all scaled by $1/(2\eta)$. If the learner suffers high regret at round $t$, they must have made proportionally large progress toward the optimal comparator $u$ — a fundamental fairness property of OGD.</p>
+        <p>The final inequality $f(x) - f(u) \le (\text{progress} + \text{noise}) / (2\eta)$ has a beautiful interpretation: the instantaneous regret at round $t$ is at most the <em>distance shrinkage</em> toward $u$ plus a <em>discretization penalty</em>, all scaled by $1/(2\eta)$. If the learner suffers high regret at round $t$, they must have made proportionally large progress toward the optimal comparator $u$, a fundamental fairness property of OGD.</p>
         <p>The division by $2\eta$ is valid only because $\eta > 0$, which is ensured by the positivity condition $h\eta\_pos$ in the Lean statement.</p>
       </div>
     </details>
@@ -1193,11 +1192,11 @@ lemma step_regret_decomposition_inequality (f : E → ℝ) (g x u : E)
     <details class="lemma-details">
       <summary>Full Narrative</summary>
       <div class="details-body">
-        <p>After summing the per-step bound from Lemma 8 over $T$ rounds, the regret is bounded by two competing terms:</p>
+        <p>After summing the per-step bound from Lemma 9 over $T$ rounds, the regret is bounded by two competing terms:</p>
         $$\text{Regret}_T \le \frac{\|x_0 - u\|^2}{2\eta} + \frac{\eta}{2} \sum_{t=1}^T \|g_t\|^2 \le \frac{D^2}{2\eta} + \frac{\eta L^2 T}{2}.$$
-        <p>The first term $\frac{D^2}{2\eta}$ grows as $\eta$ <em>decreases</em> (small steps mean slow initial progress). The second term $\frac{\eta L^2 T}{2}$ grows as $\eta$ <em>increases</em> (large steps mean more noise). The optimal $\eta$ minimizes their sum — a classic bias-variance tradeoff.</p>
+        <p>The first term $\frac{D^2}{2\eta}$ grows as $\eta$ <em>decreases</em> (small steps mean slow initial progress). The second term $\frac{\eta L^2 T}{2}$ grows as $\eta$ <em>increases</em> (large steps mean more noise). The optimal $\eta$ minimizes their sum, a classic bias-variance tradeoff.</p>
         <p>Setting the derivative to zero: $-\frac{D^2}{2\eta^2} + \frac{L^2 T}{2} = 0$ gives $\eta = \frac{D}{L\sqrt{T}}$. Plugging this back in yields the clean final bound $\text{Regret}_T \le DL\sqrt{T}$.</p>
-        <p>This lemma is purely algebraic — the Lean proof uses `ring`, `positivity`, and field simplification lemmas — but it represents the conceptual climax of the analysis: the <em>existence</em> of a step size that makes the average regret vanish as $T \to \infty$.</p>
+        <p>This lemma is purely algebraic; the Lean proof uses <code>ring</code>, <code>positivity</code>, and field simplification lemmas. Crucially, it represents the conceptual climax of the analysis: the <em>existence</em> of a step size that makes the average regret vanish as $T \to \infty$.</p>
       </div>
     </details>
 
@@ -1251,15 +1250,15 @@ lemma ogd_regret_optimal_step_size_choice (D L T : ℝ) (hD : 0 < D) (hL : 0 < L
     </div>
     
     <p><strong>Claim:</strong></p>
-    $$\sum_{t=1}^T (f_t(x_t) - f_t(u)) \le \frac{\text{dist}(x_0, u)^2 - \text{dist}(x_T, u)^2 + \eta^2 \sum_{t=1}^T \|g_t\|^2}{2\eta}$$
+    $$\sum_{t=1}^T (f_t(x_t) - f_t(u)) \le \frac{\operatorname{dist}(x_0, u)^2 - \operatorname{dist}(x_T, u)^2 + \eta^2 \sum_{t=1}^T \|g_t\|^2}{2\eta}$$
 
     <p><strong>Goal:</strong></p>
-    <p>We transition from single-step regret (Lemma 8) to cumulative regret via an inductive proof on $T$, telescoping the distance terms.</p>
+    <p>We transition from single-step regret (Lemma 9) to cumulative regret via an inductive proof on $T$, telescoping the distance terms.</p>
 
     <details class="lemma-details">
       <summary>Full Narrative</summary>
       <div class="details-body">
-        <p>This lemma aggregates the single-step bounds (Lemma 8) over $T$ time steps. The power of this approach lies in the <strong>telescoping sum</strong>: when we sum the squared distance progress terms, the intermediate distance terms cancel out (e.g., $-\text{dist}(x_1, u)^2 + \text{dist}(x_1, u)^2 = 0$).</p>
+        <p>This lemma aggregates the single-step bounds (Lemma 9) over $T$ time steps. The power of this approach lies in the <strong>telescoping sum</strong>: when we sum the squared distance progress terms, the intermediate distance terms cancel out (e.g., $-\operatorname{dist}(x_1, u)^2 + \operatorname{dist}(x_1, u)^2 = 0$).</p>
         <p>We use induction on $T$ to formally prove that the sum of the instantaneous regrets is bounded by the distance change from start to finish, plus the accumulated noise terms. This provides the aggregate regret used in the final theorem.</p>
       </div>
     </details>
@@ -1311,7 +1310,7 @@ lemma ogd_regret_inductive_bound (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ �
   <!-- Lemma 10 -->
   <div class="lemma-block" id="l10">
     <div class="lemma-title">
-      <span>Theorem: The Final $O(\sqrt{T})$ Regret Bound</span>
+      <span>Theorem: $O(\sqrt{T})$ Regret Bound</span>
     </div>
     
     <p><strong>Claim:</strong></p>
@@ -1319,22 +1318,22 @@ lemma ogd_regret_inductive_bound (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ �
 
     <p><strong>Notation:</strong></p>
     <ul>
-      <li>$\sum (f_t(x_t) - f_t(u))$ : The <strong>cumulative regret</strong> accumulated over $T$ iterations.</li>
+      <li>$\sum_{t=1}^T (f_t(x_t) - f_t(u))$ : The <strong>cumulative regret</strong> accumulated over $T$ iterations.</li>
       <li>$O(\sqrt{T})$ : The <strong>sublinear growth rate</strong>, indicating the average regret $\to 0$.</li>
     </ul>
 
     <p><strong>Goal:</strong></p>
-    <p>Summing Lemma 8 over rounds. Distances <b>telescope</b>, leaving only initial error and noise. The <b>average</b> regret vanishes as $T \to \infty$. This proves OGD is a "no-regret" learner.</p>
+    <p>Summing Lemma 9 over rounds. Distances <b>telescope</b>, leaving only initial error and noise. The <b>average</b> regret vanishes as $T \to \infty$. This proves OGD is a "no-regret" learner.</p>
 
     <details class="lemma-details">
       <summary>Full Narrative</summary>
       <div class="details-body">
-        <p>The final theorem assembles all the pieces. Summing Lemma 8 over $t = 1$ to $T$:</p>
-        $$\sum_{t=1}^T (f_t(x_t) - f_t(u)) \le \frac{1}{2\eta} \sum_{t=1}^T (\text{dist}(x_t, u)^2 - \text{dist}(x_{t+1}, u)^2) + \frac{\eta}{2} \sum_{t=1}^T \|g_t\|^2.$$
-        <p>The first sum <strong>telescopes</strong>: all intermediate distance terms cancel, leaving only $\text{dist}(x_0, u)^2 - \text{dist}(x_{T+1}, u)^2 \le \text{dist}(x_0, u)^2$. The second sum, by the Lipschitz assumption, is at most $T L^2$.</p>
-        <p>Applying the bound $\text{dist}(x_0, u) \le D$ and substituting $\eta = D/(L\sqrt{T})$ gives:</p>
+        <p>The final theorem assembles all the pieces. Summing Lemma 9 over $t = 1$ to $T$:</p>
+        $$\sum_{t=1}^T (f_t(x_t) - f_t(u)) \le \frac{1}{2\eta} \sum_{t=1}^T (\operatorname{dist}(x_t, u)^2 - \operatorname{dist}(x_{t+1}, u)^2) + \frac{\eta}{2} \sum_{t=1}^T \|g_t\|^2.$$
+        <p>The first sum <strong>telescopes</strong>: all intermediate distance terms cancel, leaving only $\operatorname{dist}(x_0, u)^2 - \operatorname{dist}(x_{T+1}, u)^2 \le \operatorname{dist}(x_0, u)^2$. The second sum, by the Lipschitz assumption, is at most $T L^2$.</p>
+        <p>Applying the bound $\operatorname{dist}(x_0, u) \le D$ and substituting $\eta = D/(L\sqrt{T})$ gives:</p>
         $$\text{Regret}_T \le \frac{D^2}{2\eta} + \frac{\eta L^2 T}{2} = DL\sqrt{T}.$$
-        <p>This is the celebrated $O(\sqrt{T})$ regret bound for OGD. The average regret $\text{Regret}_T / T \le DL / \sqrt{T} \to 0$ as $T \to \infty$ — the learner's per-round performance asymptotically matches the best fixed decision in hindsight, despite facing an adversarially chosen sequence of losses.</p>
+        <p>This is the $O(\sqrt{T})$ regret bound for OGD. The average regret $\text{Regret}_T / T \le DL / \sqrt{T} \to 0$ as $T \to \infty$; the learner's per-round performance asymptotically matches the best fixed decision in hindsight, despite facing an adversarially chosen sequence of losses.</p>
       </div>
     </details>
 
