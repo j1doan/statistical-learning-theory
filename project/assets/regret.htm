@@ -520,39 +520,42 @@
         L1[DEF: FIRST ORDER CONVEXITY]
         L2[DEF: LIPSCHITZ CONTINUITY]
         L3[DEF: OGD UPDATE RULE]
+        L3b[DEF: OGD PROJECTION FEASIBILITY]
         L4[SQUARED DISTANCE EXPANSION]
         L5[NON-EXPANSIVENESS OF CONVEX PROJECTION]
         L6[STEP-WISE REGRET BOUND]
         L7[INNER PRODUCT RELATION]
         L8[REGRET DECOMPOSITION]
         L9[OPTIMAL STEP SIZE]
-        L10a[INDUCTIVE BOUND]
-        L10b[FINAL THEOREM]
+        L9b[LEMMA: INDUCTIVE BOUND]
+        L10[FINAL THEOREM]
 
         L1 --> L6
         L3 --> L4
+        L3b --> L4
         L5 --> L4
         L4 --> L7
         L6 --> L8
         L7 --> L8
-        L8 --> L10a
-        L10a --> L10b
-        L2 --> L10b
-        L9 --> L10b
+        L8 --> L9b
+        L9b --> L10
+        L2 --> L10
+        L9 --> L10
 
         click L1 "#l1"
         click L2 "#l2"
         click L3 "#l3"
+        click L3b "#l3b"
         click L4 "#l4"
         click L5 "#l5"
         click L6 "#l6"
         click L7 "#l7"
         click L8 "#l8"
         click L9 "#l9"
-        click L10a "#l10"
-        click L10b "#l10"
+        click L9b "#l9b"
+        click L10 "#l10"
 
-        class L1,L2,L3,L9,L10b accent
+        class L1,L2,L3,L9,L10 accent
           `.trim();
           
           container.innerHTML = `<div class="mermaid">${diagram}</div>`;
@@ -604,13 +607,15 @@
     <a href="#l1">1. First-Order Convexity</a>
     <a href="#l2">2. Lipschitz Continuity</a>
     <a href="#l3">3. OGD Update Rule</a>
-    <a href="#l4">4. Squared Distance Expansion</a>
-    <a href="#l5">5. Projection Non-expansiveness</a>
-    <a href="#l6">6. Step-wise Regret Bound</a>
-    <a href="#l7">7. Inner Product Relation</a>
-    <a href="#l8">8. Regret Decomposition</a>
-    <a href="#l9">9. Optimal Step Size</a>
-    <a href="#l10">10. Final Regret Theorem</a>
+    <a href="#l3b">4. Projection Feasibility</a>
+    <a href="#l4">5. Squared Distance Expansion</a>
+    <a href="#l5">6. Projection Non-expansiveness</a>
+    <a href="#l6">7. Step-wise Regret Bound</a>
+    <a href="#l7">8. Inner Product Relation</a>
+    <a href="#l8">9. Regret Decomposition</a>
+    <a href="#l9">10. Optimal Step Size</a>
+    <a href="#l9b">11. Inductive Bound</a>
+    <a href="#l10">12. Final Regret Theorem</a>
   </div>
 </div>
 
@@ -625,6 +630,29 @@
   </div>
   
   <h2>Formalizing Online Learning Regret Bounds in Lean 4</h2>
+
+  <!-- Project-Wide Setup Block -->
+  <div class="lemma-block" id="setup-imports">
+    <div class="lemma-title">
+      <span>Project-Wide Setup</span>
+    </div>
+    <p>The following imports and definitions serve as the foundational bedrock for all subsequent proofs.</p>
+    <details class="lemma-code" open>
+      <summary>Lean 4 Definitions</summary>
+      <pre><code>import Mathlib.Tactic
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Algebra.Order.Field.Basic
+
+open scoped RealInnerProductSpace
+universe u
+variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+-- PROJECTION STRUCTURE (nonexpansive map)
+structure Projection (E : Type u) [PseudoMetricSpace E] where
+  proj : E → E
+  nonexpansive : LipschitzWith 1 proj</code></pre>
+    </details>
+  </div>
   
   <p>
     We derive a rigorous upper bound on the <i>regret</i> of an online learner. Unlike batch optimization, we make no assumptions about the distribution of future data. Instead, we establish a foundational setup where the learner selects iterates from a convex set $\mathcal{K}$ and suffers losses from an arbitrary sequence of convex, Lipschitz functions $f_t$.
@@ -698,10 +726,12 @@
       </div>
     </details>
 
-    <details class="lemma-code">
+<details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">def</span> <span class="definition">convex_function_first_order_inequality</span> (f : E → ℝ) (g : E) (x : E) : <span class="keyword">Prop</span> :=
-  ∀ y : E, f y ≥ f x + ⟪g, y - x⟫</code></pre>
+      <pre><code>-- SUBGRADIENT CHARACTERIZATION (convexity form)
+def convex_function_first_order_inequality (f : E → ℝ) (g : E) (x : E) : Prop :=
+  ∀ y : E, f y ≥ f x + ⟪g, y - x⟫
+</code></pre>
     </details>
   </div>
 
@@ -734,8 +764,10 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">def</span> <span class="definition">lipschitz_continuous_def</span> (g : E) (L : ℝ) : <span class="keyword">Prop</span> :=
-  ‖g‖ ≤ L</code></pre>
+      <pre><code>--  LIPSCHITZ / BOUNDEDHGRADIENT ASSUMPTION
+def lipschitz_continuous_def (g : E) (L : ℝ) : Prop :=
+  ‖g‖ ≤ L
+</code></pre>
     </details>
   </div>
 
@@ -768,8 +800,46 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">def</span> <span class="definition">ogd_update_rule_def</span> (P : Projection E) (η : ℝ) (x g : E) : E :=
-  P.proj (x - η • g)</code></pre>
+      <pre><code>
+-- OGD UPDATE RULE
+def ogd_update_rule_def (P : Projection E) (η : ℝ) (x g : E) : E :=
+  P.proj (x - η • g)
+</code></pre>
+    </details>
+  </div>
+
+  <!-- Lemma: Projection Feasibility -->
+  <div class="lemma-block" id="l3b">
+    <div class="lemma-title">
+      <span>Definition: OGD Projection Step Feasibility</span>
+    </div>
+    
+    <p><strong>Claim:</strong></p>
+    $$P.proj(u) = u$$
+
+    <p><strong>Notation:</strong></p>
+    <ul>
+      <li>$P$ : The <strong>projection operator</strong> onto the set $\mathcal{K}$.</li>
+      <li>$u$ : A point in the domain, usually the <strong>comparator</strong>.</li>
+    </ul>
+
+    <p><strong>Goal:</strong></p>
+    <p>This definition ensures that the comparator $u$ is feasible within the convex set $\mathcal{K}$, allowing us to use it as a valid target for the learner.</p>
+
+    <details class="lemma-details">
+      <summary>Full Narrative</summary>
+      <div class="details-body">
+        <p>Before we can analyze the distance between our iterate $x_t$ and the comparator $u$, we must ensure $u$ is actually in the feasible set $\mathcal{K}$. This definition formally states that projecting a point $u$ that is already in $\mathcal{K}$ onto $\mathcal{K}$ returns $u$ itself.</p>
+        <p>In OGD, we typically assume $u \in \mathcal{K}$. This property is used in the squared distance expansion (Lemma 4) to justify the projection step.</p>
+      </div>
+    </details>
+
+    <details class="lemma-code">
+      <summary>Lean 4 Code</summary>
+      <pre><code>-- FEASIBILITY CONDITION (optimal point fixed by projection)
+def ogd_projection_step_feasibility (P : Projection E) (u : E) : Prop :=
+  P.proj u = u
+</code></pre>
     </details>
   </div>
 
@@ -797,32 +867,34 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_step_expansion_squared_distance</span> (P : Projection E) (η : ℝ) (x g u : E)
+      <pre><code>-- MAIN ONE-STEP DISTANCE PROGRESS LEMMA
+lemma ogd_step_expansion_squared_distance (P : Projection E) (η : ℝ) (x g u : E)
     (hu : ogd_projection_step_feasibility P u) :
     dist (ogd_update_rule_def P η x g) u ^ 2
-      ≤ dist x u ^ 2 - 2 * η * ⟪g, x - u⟫ + η ^ 2 * ‖g‖ ^ 2 := <span class="keyword">by</span>
-  <span class="comment">-- Apply Nonexpansiveness</span>
-  <span class="keyword">have</span> h_nonexp := P.nonexpansive.dist_le_mul (x - η • g) u
-  <span class="comment">-- Clean up projection and constant</span>
-  rw [hu] <span class="keyword">at</span> h_nonexp
-  replace h_nonexp : dist (ogd_update_rule_def P η x g) u ≤ dist (x - η • g) u := <span class="keyword">by</span>
-    simpa <span class="keyword">using</span> h_nonexp
-  <span class="comment">-- Square both sides</span>
-  <span class="keyword">have</span> h_sq : dist (ogd_update_rule_def P η x g) u ^ 2 ≤ dist (x - η • g) u ^ 2 := <span class="keyword">by</span>
+      ≤ dist x u ^ 2 - 2 * η * ⟪g, x - u⟫ + η ^ 2 * ‖g‖ ^ 2 := by
+  -- Apply Nonexpansiveness
+  have h_nonexp := P.nonexpansive.dist_le_mul (x - η • g) u
+  -- Clean up projection and constant
+  rw [hu] at h_nonexp
+  replace h_nonexp : dist (ogd_update_rule_def P η x g) u ≤ dist (x - η • g) u := by
+    simpa using h_nonexp
+  -- Square both sides
+  have h_sq : dist (ogd_update_rule_def P η x g) u ^ 2 ≤ dist (x - η • g) u ^ 2 := by
     gcongr
-  <span class="comment">-- Move from 'dist' to 'norm'</span>
-  rw [dist_eq_norm, dist_eq_norm] <span class="keyword">at</span> h_sq ⊢
-  <span class="comment">-- Expand quadratic form</span>
+  -- Move from 'dist' to 'norm'
+  rw [dist_eq_norm, dist_eq_norm] at h_sq ⊢
+  -- Expand quadratic form
   refine h_sq.trans ?_
   rw [sub_right_comm, norm_sub_sq_real]
-  <span class="comment">-- Simplify algebra</span>
+  -- Simplify algebra
   simp only [inner_smul_right, norm_smul, Real.norm_eq_abs]
-  <span class="comment">-- η² identity</span>
-  <span class="keyword">have</span> h_eta_sq : (|η| * ‖g‖) ^ 2 = η ^ 2 * ‖g‖ ^ 2 := <span class="keyword">by</span>
+  -- η² identity
+  have h_eta_sq : (|η| * ‖g‖) ^ 2 = η ^ 2 * ‖g‖ ^ 2 := by
     rw [mul_pow, sq_abs]
   rw [h_eta_sq, real_inner_comm]
   ring_nf
-  apply le_refl</code></pre>
+  apply le_refl
+</code></pre>
     </details>
   </div>
 
@@ -856,10 +928,13 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_projection_nonexpansive_property</span> (P : Projection E) (η : ℝ) (x g u : E) :
-    dist (ogd_update_rule_def P η x g) (P.proj u) ≤ dist (x - η • g) u := <span class="keyword">by</span>
+      <pre><code>-- PROJECTION NONEXPANSIVENESS STEP (auxiliary lemma)
+lemma ogd_projection_nonexpansive_property (P : Projection E) (η : ℝ) (x g u : E) :
+    dist (ogd_update_rule_def P η x g) (P.proj u) ≤ dist (x - η • g) u := by
   simpa [ogd_update_rule_def]
-    <span class="keyword">using</span> (P.nonexpansive.dist_le_mul (x - η • g) u)</code></pre>
+    using (P.nonexpansive.dist_le_mul (x - η • g) u)
+
+</code></pre>
     </details>
   </div>
 
@@ -893,16 +968,18 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">lemma</span> <span class="lemma">step_regret_convexity_upper_bound</span> (f : E → ℝ) (g x u : E)
+      <pre><code>-- CONVEXITY YIELDS STEPWISE REGRET UPPER BOUND
+lemma step_regret_convexity_upper_bound (f : E → ℝ) (g x u : E)
     (hconv : convex_function_first_order_inequality f g x) :
-    f x - f u ≤ ⟪g, x - u⟫ := <span class="keyword">by</span>
-  <span class="comment">-- Apply convexity at u</span>
-  <span class="keyword">have</span> h := hconv u
-  <span class="comment">-- Rearrange inequality</span>
-  <span class="keyword">have</span> h' : f x - f u ≤ -⟪g, u - x⟫ := <span class="keyword">by</span> linarith
-  <span class="comment">-- Use inner product properties to swap arguments</span>
-  <span class="keyword">have</span> hx : ⟪g, x - u⟫ = -⟪g, u - x⟫ := <span class="keyword">by</span> rw [← inner_neg_right, neg_sub]
-  linarith [hx]</code></pre>
+    f x - f u ≤ ⟪g, x - u⟫ := by
+  -- Apply convexity at u
+  have h := hconv u
+  -- Rearrange inequality
+  have h' : f x - f u ≤ -⟪g, u - x⟫ := by linarith
+  -- Use inner product properties to swap arguments
+  have hx : ⟪g, x - u⟫ = -⟪g, u - x⟫ := by rw [← inner_neg_right, neg_sub]
+  linarith [hx]
+</code></pre>
     </details>
   </div>
 
@@ -936,14 +1013,16 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">lemma</span> <span class="lemma">step_regret_inner_product_to_distance_relation</span> (P : Projection E) (η : ℝ)
+      <pre><code>-- INNER PRODUCT CONTROLLED BY DISTANCE PROGRESS
+lemma step_regret_inner_product_to_distance_relation (P : Projection E) (η : ℝ)
     (x g u : E) (hu : ogd_projection_step_feasibility P u) :
     2 * η * ⟪g, x - u⟫
-      ≤ dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2 := <span class="keyword">by</span>
-  <span class="comment">-- Invoke main squared distance expansion</span>
-  <span class="keyword">have</span> h := ogd_step_expansion_squared_distance (P := P) (η := η) (x := x) (g := g) (u := u) hu
-  <span class="comment">-- Algebraically rearrange to bound inner product</span>
-  linarith</code></pre>
+      ≤ dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2 := by
+  -- Invoke main squared distance expansion
+  have h := ogd_step_expansion_squared_distance (P := P) (η := η) (x := x) (g := g) (u := u) hu
+  -- Algebraically rearrange to bound inner product
+  linarith
+</code></pre>
     </details>
   </div>
 
@@ -980,22 +1059,24 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">lemma</span> <span class="lemma">step_regret_decomposition_inequality</span> (f : E → ℝ) (g x u : E)
+      <pre><code>-- ONE-STEP REGRET DECOMPOSITION
+lemma step_regret_decomposition_inequality (f : E → ℝ) (g x u : E)
     (hconv : convex_function_first_order_inequality f g x)
     (P : Projection E) (η : ℝ) (hu : ogd_projection_step_feasibility P u)
     (hη_pos : 0 < η) :
-    f x - f u ≤ (dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2) / (2 * η) := <span class="keyword">by</span>
-  <span class="comment">-- Bound objective difference via subgradient</span>
-  <span class="keyword">have</span> h₁ : f x - f u ≤ ⟪g, x - u⟫ := step_regret_convexity_upper_bound f g x u hconv
-  <span class="comment">-- Bound subgradient via distance progress</span>
-  <span class="keyword">have</span> h₂ : 2 * η * ⟪g, x - u⟫ ≤ dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2 :=
+    f x - f u ≤ (dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2) / (2 * η) := by
+  -- Bound objective difference via subgradient
+  have h₁ : f x - f u ≤ ⟪g, x - u⟫ := step_regret_convexity_upper_bound f g x u hconv
+  -- Bound subgradient via distance progress
+  have h₂ : 2 * η * ⟪g, x - u⟫ ≤ dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2 :=
     step_regret_inner_product_to_distance_relation P η x g u hu
-  <span class="comment">-- Divide by 2η (valid since η > 0)</span>
-  <span class="keyword">have</span> h₄ : ⟪g, x - u⟫ ≤ (dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2) / (2 * η) := <span class="keyword">by</span>
+  -- Divide by 2η (valid since η > 0)
+  have h₄ : ⟪g, x - u⟫ ≤ (dist x u ^ 2 - dist (ogd_update_rule_def P η x g) u ^ 2 + η ^ 2 * ‖g‖ ^ 2) / (2 * η) := by
     rw [le_div_iff₀ (by linarith)]
     linarith
-  <span class="comment">-- Combine bounds</span>
-  linarith</code></pre>
+  -- Combine bounds
+  linarith
+</code></pre>
     </details>
   </div>
 
@@ -1031,31 +1112,96 @@
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_regret_optimal_step_size_choice</span> (D L T : ℝ) (hD : 0 < D) (hL : 0 < L) (hT : 0 < T) :
-    <span class="keyword">let</span> η := D / (L * Real.sqrt T)
-    D^2 / (2 * η) + η * L^2 * T / 2 = D * L * Real.sqrt T := <span class="keyword">by</span>
+      <pre><code>-- OPTIMAL STEP SIZE ALGEBRAIC IDENTITY
+lemma ogd_regret_optimal_step_size_choice (D L T : ℝ) (hD : 0 < D) (hL : 0 < L) (hT : 0 < T) :
+    let η := D / (L * Real.sqrt T)
+    D^2 / (2 * η) + η * L^2 * T / 2 = D * L * Real.sqrt T := by
   intro η
-  <span class="keyword">have</span> h_sqrt : (Real.sqrt T) * (Real.sqrt T) = T := Real.mul_self_sqrt (by positivity)
-  <span class="keyword">have</span> h_L2_T : L^2 * T = (L * Real.sqrt T)^2 := <span class="keyword">by</span>
+  -- Simplify root properties
+  have h_sqrt : (Real.sqrt T) * (Real.sqrt T) = T := Real.mul_self_sqrt (by positivity)
+  have h_L2_T : L^2 * T = (L * Real.sqrt T)^2 := by
     calc L^2 * T
-      _ = L^2 * ((Real.sqrt T) * (Real.sqrt T)) := <span class="keyword">by</span> rw [h_sqrt]
-      _ = L^2 * (Real.sqrt T)^2 := <span class="keyword">by</span> ring
-      _ = (L * Real.sqrt T)^2 := <span class="keyword">by</span> ring
-  <span class="keyword">have</span> hx_pos : 0 < L * Real.sqrt T := <span class="keyword">by</span> positivity
-  <span class="keyword">have</span> hD_ne : D ≠ 0 := ne_of_gt hD
-  <span class="keyword">have</span> hx_ne : L * Real.sqrt T ≠ 0 := ne_of_gt hx_pos
-  <span class="keyword">have</span> H1 : D^2 / (2 * (D / (L * Real.sqrt T))) = D * (L * Real.sqrt T) / 2 := <span class="keyword">by</span>
+      _ = L^2 * ((Real.sqrt T) * (Real.sqrt T)) := by rw [h_sqrt]
+      _ = L^2 * (Real.sqrt T)^2 := by ring
+      _ = (L * Real.sqrt T)^2 := by ring
+  -- Positivity and non-zero invariants
+  have hx_pos : 0 < L * Real.sqrt T := by positivity
+  have hD_ne : D ≠ 0 := ne_of_gt hD
+  have hx_ne : L * Real.sqrt T ≠ 0 := ne_of_gt hx_pos
+  -- First fraction reduction
+  have H1 : D^2 / (2 * (D / (L * Real.sqrt T))) = D * (L * Real.sqrt T) / 2 := by
     rw [mul_div_assoc', div_div_eq_mul_div]
-    <span class="keyword">have</span> : D^2 * (L * Real.sqrt T) / (2 * D) = D * (D * (L * Real.sqrt T)) / (D * 2) := <span class="keyword">by</span> ring
+    have : D^2 * (L * Real.sqrt T) / (2 * D) = D * (D * (L * Real.sqrt T)) / (D * 2) := by ring
     rw [this, mul_div_mul_left _ _ hD_ne]
-  <span class="keyword">have</span> H2 : (D / (L * Real.sqrt T)) * (L^2 * T) / 2 = D * (L * Real.sqrt T) / 2 := <span class="keyword">by</span>
+  -- Second fraction reduction
+  have H2 : (D / (L * Real.sqrt T)) * (L^2 * T) / 2 = D * (L * Real.sqrt T) / 2 := by
     rw [h_L2_T]
-    <span class="keyword">have</span> : (D / (L * Real.sqrt T)) * (L * Real.sqrt T)^2 / 2 = D * (L * Real.sqrt T) * (L * Real.sqrt T) / (L * Real.sqrt T) / 2 := <span class="keyword">by</span> ring
+    have : (D / (L * Real.sqrt T)) * (L * Real.sqrt T)^2 / 2 = D * (L * Real.sqrt T) * (L * Real.sqrt T) / (L * Real.sqrt T) / 2 := by ring
     rw [this, mul_div_cancel_right₀ _ hx_ne]
+  -- Combine
   calc D^2 / (2 * (D / (L * Real.sqrt T))) + (D / (L * Real.sqrt T)) * L^2 * T / 2
-    _ = D^2 / (2 * (D / (L * Real.sqrt T))) + (D / (L * Real.sqrt T)) * (L^2 * T) / 2 := <span class="keyword">by</span> ring
-    _ = D * (L * Real.sqrt T) / 2 + D * (L * Real.sqrt T) / 2 := <span class="keyword">by</span> rw [H1, H2]
-    _ = D * L * Real.sqrt T := <span class="keyword">by</span> ring</code></pre>
+    _ = D^2 / (2 * (D / (L * Real.sqrt T))) + (D / (L * Real.sqrt T)) * (L^2 * T) / 2 := by ring
+    _ = D * (L * Real.sqrt T) / 2 + D * (L * Real.sqrt T) / 2 := by rw [H1, H2]
+    _ = D * L * Real.sqrt T := by ring
+</code></pre>
+    </details>
+  </div>
+
+  <!-- Lemma: Inductive Regret Accumulation -->
+  <div class="lemma-block" id="l9b">
+    <div class="lemma-title">
+      <span>Lemma: Inductive Regret Accumulation</span>
+    </div>
+    
+    <p><strong>Claim:</strong></p>
+    $$\sum_{t=1}^T (f_t(x_t) - f_t(u)) \le \frac{\text{dist}(x_0, u)^2 - \text{dist}(x_T, u)^2 + \eta^2 \sum_{t=1}^T \|g_t\|^2}{2\eta}$$
+
+    <p><strong>Goal:</strong></p>
+    <p>We transition from single-step regret (Lemma 8) to cumulative regret via an inductive proof on $T$, telescoping the distance terms.</p>
+
+    <details class="lemma-details">
+      <summary>Full Narrative</summary>
+      <div class="details-body">
+        <p>This lemma aggregates the single-step bounds (Lemma 8) over $T$ time steps. The power of this approach lies in the <strong>telescoping sum</strong>: when we sum the squared distance progress terms, the intermediate distance terms cancel out (e.g., $-\text{dist}(x_1, u)^2 + \text{dist}(x_1, u)^2 = 0$).</p>
+        <p>We use induction on $T$ to formally prove that the sum of the instantaneous regrets is bounded by the distance change from start to finish, plus the accumulated noise terms. This provides the aggregate regret used in the final theorem.</p>
+      </div>
+    </details>
+
+    <details class="lemma-code">
+      <summary>Lean 4 Code</summary>
+      <pre><code>omit [InnerProductSpace ℝ E] in
+-- INDUCTIVE ACCUMULATION OVER ALL TIME STEPS
+lemma ogd_regret_inductive_bound (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ → E) (u : E) (η : ℝ)
+    (h_step : ∀ t, t < T → f t (x t) - f t u ≤ (dist (x t) u ^ 2 - dist (x (t + 1)) u ^ 2 + η ^ 2 * ‖g t‖ ^ 2) / (2 * η)) :
+    (∑ t ∈ Finset.range T, (f t (x t) - f t u)) ≤ (dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2) / (2 * η) := by
+  induction T with
+  | zero => simp
+  | succ T ih =>
+    -- Expand summation ranges for step T
+    rw [Finset.sum_range_succ, Finset.sum_range_succ]
+    -- Inductive hypothesis
+    have h1 : (∑ t ∈ Finset.range T, (f t (x t) - f t u)) ≤ (dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2) / (2 * η) := by
+      apply ih
+      intro t ht
+      apply h_step t
+      linarith
+    -- Regret for step T via h_step parameter
+    have h2 : f T (x T) - f T u ≤ (dist (x T) u ^ 2 - dist (x (T + 1)) u ^ 2 + η ^ 2 * ‖g T‖ ^ 2) / (2 * η) := by
+      apply h_step T
+      linarith
+    -- Combine inductive sum and final step
+    have h3 : (∑ t ∈ Finset.range T, (f t (x t) - f t u)) + (f T (x T) - f T u) ≤
+              (dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2) / (2 * η) +
+              (dist (x T) u ^ 2 - dist (x (T + 1)) u ^ 2 + η ^ 2 * ‖g T‖ ^ 2) / (2 * η) := add_le_add h1 h2
+    -- Algebraically collapse telescoping elements (-dist(x_T) + dist(x_T) = 0)
+    have h4 : (dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2) / (2 * η) +
+              (dist (x T) u ^ 2 - dist (x (T + 1)) u ^ 2 + η ^ 2 * ‖g T‖ ^ 2) / (2 * η) =
+              (dist (x 0) u ^ 2 - dist (x (T + 1)) u ^ 2 + η ^ 2 * ((∑ t ∈ Finset.range T, ‖g t‖ ^ 2) + ‖g T‖ ^ 2)) / (2 * η) := by
+      rw [←add_div]
+      congr 1
+      ring
+    linarith
+</code></pre>
     </details>
   </div>
 
@@ -1086,68 +1232,69 @@
         <p>Applying the bound $\text{dist}(x_0, u) \le D$ and substituting $\eta = D/(L\sqrt{T})$ gives:</p>
         $$\text{Regret}_T \le \frac{D^2}{2\eta} + \frac{\eta L^2 T}{2} = DL\sqrt{T}.$$
         <p>This is the celebrated $O(\sqrt{T})$ regret bound for OGD. The average regret $\text{Regret}_T / T \le DL / \sqrt{T} \to 0$ as $T \to \infty$ — the learner's per-round performance asymptotically matches the best fixed decision in hindsight, despite facing an adversarially chosen sequence of losses.</p>
-        <p>In Lean, the proof requires an inductive accumulation lemma (`ogd_regret_inductive_bound`) to handle the telescoping sum without explicit `Finset` summation tricks, as noted in the "Lessons Learned" section of the project plan. The final step invokes the optimal step-size lemma (Lemma 9) to collapse the algebraic expression to $DL\sqrt{T}$.</p>
       </div>
     </details>
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code><span class="keyword">lemma</span> <span class="lemma">ogd_regret_final_rate_theorem</span> (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ → E) (u : E) (D L : ℝ)
+      <pre><code>omit [InnerProductSpace ℝ E] in
+-- FINAL REGRET BOUND THEOREM WITH OPTIMAL STEP SIZE
+lemma ogd_regret_final_rate_theorem (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ → E) (u : E) (D L : ℝ)
     (hD : 0 < D) (hL : 0 < L) (hT : 0 < T)
     (h_dist : dist (x 0) u ≤ D)
     (h_lipschitz : ∀ t, t < T → ‖g t‖ ≤ L)
     (h_step : ∀ t, t < T → f t (x t) - f t u ≤ (dist (x t) u ^ 2 - dist (x (t + 1)) u ^ 2 + (D / (L * Real.sqrt T)) ^ 2 * ‖g t‖ ^ 2) / (2 * (D / (L * Real.sqrt T)))) :
-    (∑ t ∈ Finset.range T, (f t (x t) - f t u)) ≤ D * L * Real.sqrt (T:ℝ) := <span class="keyword">by</span>
-  <span class="keyword">have</span> hT_real : (0:ℝ) < T := <span class="keyword">by</span> exact Nat.cast_pos.mpr hT
+    (∑ t ∈ Finset.range T, (f t (x t) - f t u)) ≤ D * L * Real.sqrt (T:ℝ) := by
+  have hT_real : (0:ℝ) < T := by exact Nat.cast_pos.mpr hT
   set η := D / (L * Real.sqrt T)
-  <span class="keyword">have</span> h_eta_pos : 0 < η := <span class="keyword">by</span> positivity
+  have h_eta_pos : 0 < η := by positivity
 
-  <span class="comment">-- Apply Inductive Accumulation</span>
-  <span class="keyword">have</span> h_bound := ogd_regret_inductive_bound T f g x u η h_step
+  -- Apply Inductive Accumulation
+  have h_bound := ogd_regret_inductive_bound T f g x u η h_step
 
-  <span class="comment">-- Bound Subgradient Magnitudes (Lipschitz assumption over time T)</span>
-  <span class="keyword">have</span> h_g_sum : (∑ t ∈ Finset.range T, ‖g t‖ ^ 2) ≤ (T:ℝ) * L ^ 2 := <span class="keyword">by</span>
+  -- Bound Subgradient Magnitudes (Lipschitz assumption over time T)
+  have h_g_sum : (∑ t ∈ Finset.range T, ‖g t‖ ^ 2) ≤ (T:ℝ) * L ^ 2 := by
     calc (∑ t ∈ Finset.range T, ‖g t‖ ^ 2)
-      _ ≤ ∑ t ∈ Finset.range T, L ^ 2 := <span class="keyword">by</span>
+      _ ≤ ∑ t ∈ Finset.range T, L ^ 2 := by
         apply Finset.sum_le_sum
         intro t ht
-        <span class="keyword">have</span> h_t_lt : t < T := Finset.mem_range.mp ht
-        <span class="keyword">have</span> hl := h_lipschitz t h_t_lt
+        have h_t_lt : t < T := Finset.mem_range.mp ht
+        have hl := h_lipschitz t h_t_lt
         gcongr
-      _ = (T:ℝ) * L ^ 2 := <span class="keyword">by</span> simp
+      _ = (T:ℝ) * L ^ 2 := by simp
 
-  <span class="comment">-- Initial Distance Condition (Domain size invariant D)</span>
-  <span class="keyword">have</span> h_dist_sq : dist (x 0) u ^ 2 ≤ D ^ 2 := <span class="keyword">by</span>
-    <span class="keyword">have</span> hD_pos : 0 ≤ D := <span class="keyword">by</span> linarith
+  -- Initial Distance Condition (Domain size invariant D)
+  have h_dist_sq : dist (x 0) u ^ 2 ≤ D ^ 2 := by
+    have hD_pos : 0 ≤ D := by linarith
     gcongr
 
-  <span class="comment">-- Drop non-positive final trailing distance</span>
-  <span class="keyword">have</span> h_dist_T_pos : 0 ≤ dist (x T) u ^ 2 := <span class="keyword">by</span> positivity
+  -- Drop non-positive final trailing distance
+  have h_dist_T_pos : 0 ≤ dist (x T) u ^ 2 := by positivity
 
-  <span class="comment">-- Combine parts to substitute maximum values in the inductive numerator bounds</span>
-  <span class="keyword">have</span> h_num : dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2 ≤ D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2) := <span class="keyword">by</span>
-    <span class="keyword">have</span> h_part1 : dist (x 0) u ^ 2 - dist (x T) u ^ 2 ≤ D ^ 2 := <span class="keyword">by</span> linarith
-    <span class="keyword">have</span> h_part2 : η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2 ≤ η ^ 2 * ((T:ℝ) * L ^ 2) := <span class="keyword">by</span> gcongr
+  -- Combine parts to substitute maximum values in the inductive numerator bounds
+  have h_num : dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2 ≤ D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2) := by
+    have h_part1 : dist (x 0) u ^ 2 - dist (x T) u ^ 2 ≤ D ^ 2 := by linarith
+    have h_part2 : η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2 ≤ η ^ 2 * ((T:ℝ) * L ^ 2) := by gcongr
     linarith
 
-  <span class="keyword">have</span> h_div : (dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2) / (2 * η) ≤ (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η) := <span class="keyword">by</span>
+  have h_div : (dist (x 0) u ^ 2 - dist (x T) u ^ 2 + η ^ 2 * ∑ t ∈ Finset.range T, ‖g t‖ ^ 2) / (2 * η) ≤ (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η) := by
     gcongr
 
-  <span class="comment">-- Rearrange division fraction towards substitution of optimal step-size lemma</span>
-  <span class="keyword">have</span> h_split : (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η) = D ^ 2 / (2 * η) + η * L ^ 2 * (T:ℝ) / 2 := <span class="keyword">by</span>
+  -- Rearrange division fraction towards substitution of optimal step-size lemma
+  have h_split : (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η) = D ^ 2 / (2 * η) + η * L ^ 2 * (T:ℝ) / 2 := by
     calc (D ^ 2 + η ^ 2 * ((T:ℝ) * L ^ 2)) / (2 * η)
-      _ = D ^ 2 / (2 * η) + η ^ 2 * ((T:ℝ) * L ^ 2) / (2 * η) := <span class="keyword">by</span> rw [add_div]
-      _ = D ^ 2 / (2 * η) + η * L ^ 2 * (T:ℝ) / 2 := <span class="keyword">by</span>
+      _ = D ^ 2 / (2 * η) + η ^ 2 * ((T:ℝ) * L ^ 2) / (2 * η) := by rw [add_div]
+      _ = D ^ 2 / (2 * η) + η * L ^ 2 * (T:ℝ) / 2 := by
         congr 1
-        <span class="keyword">have</span> h_eta_ne : η ≠ 0 := ne_of_gt h_eta_pos
+        have h_eta_ne : η ≠ 0 := ne_of_gt h_eta_pos
         calc η ^ 2 * ((T:ℝ) * L ^ 2) / (2 * η)
-          _ = (η * η) * ((T:ℝ) * L ^ 2) / (η * 2) := <span class="keyword">by</span> ring
-          _ = η * (η * ((T:ℝ) * L ^ 2)) / (η * 2) := <span class="keyword">by</span> ring
-          _ = η * ((T:ℝ) * L ^ 2) / 2 := <span class="keyword">by</span> rw [mul_div_mul_left _ _ h_eta_ne]
-          _ = η * L ^ 2 * (T:ℝ) / 2 := <span class="keyword">by</span> ring
+          _ = (η * η) * ((T:ℝ) * L ^ 2) / (η * 2) := by ring
+          _ = η * (η * ((T:ℝ) * L ^ 2)) / (η * 2) := by ring
+          _ = η * ((T:ℝ) * L ^ 2) / 2 := by rw [mul_div_mul_left _ _ h_eta_ne]
+          _ = η * L ^ 2 * (T:ℝ) / 2 := by ring
 
-  <span class="comment">-- Apply Optimal Step Size identity</span>
-  <span class="keyword">have</span> h_opt := ogd_regret_optimal_step_size_choice D L (T:ℝ) hD hL hT_real
+  -- Apply Optimal Step Size identity
+  have h_opt := ogd_regret_optimal_step_size_choice D L (T:ℝ) hD hL hT_real
   linarith</code></pre>
     </details>
   </div>
