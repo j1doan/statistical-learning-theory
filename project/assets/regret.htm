@@ -234,6 +234,35 @@
     }
     code { font-family: var(--mono); font-size: 0.85rem; color: var(--text-primary); }
 
+    .code-block-wrapper { position: relative; }
+
+    .code-buttons {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      gap: 0.35rem;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .code-block-wrapper:hover .code-buttons { opacity: 1; }
+
+    .code-buttons button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: filter 0.15s, transform 0.1s;
+      line-height: 1.5;
+    }
+    .code-buttons button:hover { filter: brightness(1.15); }
+    .code-buttons button:active { transform: scale(0.95); }
+    .code-buttons button.copied { background: #22c55e; }
+
     .lemma-block ul {
       margin-left: 1.2rem;
       margin-bottom: 1.2rem;
@@ -639,7 +668,8 @@
     <p>The following imports and definitions serve as the foundational bedrock for all subsequent proofs.</p>
     <details class="lemma-code" open>
       <summary>Lean 4 Definitions</summary>
-      <pre><code>import Mathlib.Tactic
+      <div class="code-block-wrapper">
+<pre><code>import Mathlib.Tactic
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Algebra.Order.Field.Basic
 
@@ -651,6 +681,11 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 structure Projection (E : Type u) [PseudoMetricSpace E] where
   proj : E → E
   nonexpansive : LipschitzWith 1 proj</code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
   
@@ -728,10 +763,16 @@ structure Projection (E : Type u) [PseudoMetricSpace E] where
 
 <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- SUBGRADIENT CHARACTERIZATION (convexity form)
+      <div class="code-block-wrapper">
+<pre><code>-- SUBGRADIENT CHARACTERIZATION (convexity form)
 def convex_function_first_order_inequality (f : E → ℝ) (g : E) (x : E) : Prop :=
   ∀ y : E, f y ≥ f x + ⟪g, y - x⟫
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -764,10 +805,16 @@ def convex_function_first_order_inequality (f : E → ℝ) (g : E) (x : E) : Pro
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>--  LIPSCHITZ / BOUNDEDHGRADIENT ASSUMPTION
+      <div class="code-block-wrapper">
+<pre><code>--  LIPSCHITZ / BOUNDEDHGRADIENT ASSUMPTION
 def lipschitz_continuous_def (g : E) (L : ℝ) : Prop :=
   ‖g‖ ≤ L
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -800,11 +847,17 @@ def lipschitz_continuous_def (g : E) (L : ℝ) : Prop :=
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>
+      <div class="code-block-wrapper">
+<pre><code>
 -- OGD UPDATE RULE
 def ogd_update_rule_def (P : Projection E) (η : ℝ) (x g : E) : E :=
   P.proj (x - η • g)
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -836,10 +889,16 @@ def ogd_update_rule_def (P : Projection E) (η : ℝ) (x g : E) : E :=
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- FEASIBILITY CONDITION (optimal point fixed by projection)
+      <div class="code-block-wrapper">
+<pre><code>-- FEASIBILITY CONDITION (optimal point fixed by projection)
 def ogd_projection_step_feasibility (P : Projection E) (u : E) : Prop :=
   P.proj u = u
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -867,7 +926,8 @@ def ogd_projection_step_feasibility (P : Projection E) (u : E) : Prop :=
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- MAIN ONE-STEP DISTANCE PROGRESS LEMMA
+      <div class="code-block-wrapper">
+<pre><code>-- MAIN ONE-STEP DISTANCE PROGRESS LEMMA
 lemma ogd_step_expansion_squared_distance (P : Projection E) (η : ℝ) (x g u : E)
     (hu : ogd_projection_step_feasibility P u) :
     dist (ogd_update_rule_def P η x g) u ^ 2
@@ -895,6 +955,11 @@ lemma ogd_step_expansion_squared_distance (P : Projection E) (η : ℝ) (x g u :
   ring_nf
   apply le_refl
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -928,13 +993,19 @@ lemma ogd_step_expansion_squared_distance (P : Projection E) (η : ℝ) (x g u :
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- PROJECTION NONEXPANSIVENESS STEP (auxiliary lemma)
+      <div class="code-block-wrapper">
+<pre><code>-- PROJECTION NONEXPANSIVENESS STEP (auxiliary lemma)
 lemma ogd_projection_nonexpansive_property (P : Projection E) (η : ℝ) (x g u : E) :
     dist (ogd_update_rule_def P η x g) (P.proj u) ≤ dist (x - η • g) u := by
   simpa [ogd_update_rule_def]
     using (P.nonexpansive.dist_le_mul (x - η • g) u)
 
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -968,7 +1039,8 @@ lemma ogd_projection_nonexpansive_property (P : Projection E) (η : ℝ) (x g u 
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- CONVEXITY YIELDS STEPWISE REGRET UPPER BOUND
+      <div class="code-block-wrapper">
+<pre><code>-- CONVEXITY YIELDS STEPWISE REGRET UPPER BOUND
 lemma step_regret_convexity_upper_bound (f : E → ℝ) (g x u : E)
     (hconv : convex_function_first_order_inequality f g x) :
     f x - f u ≤ ⟪g, x - u⟫ := by
@@ -980,6 +1052,11 @@ lemma step_regret_convexity_upper_bound (f : E → ℝ) (g x u : E)
   have hx : ⟪g, x - u⟫ = -⟪g, u - x⟫ := by rw [← inner_neg_right, neg_sub]
   linarith [hx]
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -1013,7 +1090,8 @@ lemma step_regret_convexity_upper_bound (f : E → ℝ) (g x u : E)
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- INNER PRODUCT CONTROLLED BY DISTANCE PROGRESS
+      <div class="code-block-wrapper">
+<pre><code>-- INNER PRODUCT CONTROLLED BY DISTANCE PROGRESS
 lemma step_regret_inner_product_to_distance_relation (P : Projection E) (η : ℝ)
     (x g u : E) (hu : ogd_projection_step_feasibility P u) :
     2 * η * ⟪g, x - u⟫
@@ -1023,6 +1101,11 @@ lemma step_regret_inner_product_to_distance_relation (P : Projection E) (η : �
   -- Algebraically rearrange to bound inner product
   linarith
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -1059,7 +1142,8 @@ lemma step_regret_inner_product_to_distance_relation (P : Projection E) (η : �
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- ONE-STEP REGRET DECOMPOSITION
+      <div class="code-block-wrapper">
+<pre><code>-- ONE-STEP REGRET DECOMPOSITION
 lemma step_regret_decomposition_inequality (f : E → ℝ) (g x u : E)
     (hconv : convex_function_first_order_inequality f g x)
     (P : Projection E) (η : ℝ) (hu : ogd_projection_step_feasibility P u)
@@ -1077,6 +1161,11 @@ lemma step_regret_decomposition_inequality (f : E → ℝ) (g x u : E)
   -- Combine bounds
   linarith
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -1112,7 +1201,8 @@ lemma step_regret_decomposition_inequality (f : E → ℝ) (g x u : E)
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>-- OPTIMAL STEP SIZE ALGEBRAIC IDENTITY
+      <div class="code-block-wrapper">
+<pre><code>-- OPTIMAL STEP SIZE ALGEBRAIC IDENTITY
 lemma ogd_regret_optimal_step_size_choice (D L T : ℝ) (hD : 0 < D) (hL : 0 < L) (hT : 0 < T) :
     let η := D / (L * Real.sqrt T)
     D^2 / (2 * η) + η * L^2 * T / 2 = D * L * Real.sqrt T := by
@@ -1144,6 +1234,11 @@ lemma ogd_regret_optimal_step_size_choice (D L T : ℝ) (hD : 0 < D) (hL : 0 < L
     _ = D * (L * Real.sqrt T) / 2 + D * (L * Real.sqrt T) / 2 := by rw [H1, H2]
     _ = D * L * Real.sqrt T := by ring
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -1169,7 +1264,8 @@ lemma ogd_regret_optimal_step_size_choice (D L T : ℝ) (hD : 0 < D) (hL : 0 < L
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>omit [InnerProductSpace ℝ E] in
+      <div class="code-block-wrapper">
+<pre><code>omit [InnerProductSpace ℝ E] in
 -- INDUCTIVE ACCUMULATION OVER ALL TIME STEPS
 lemma ogd_regret_inductive_bound (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ → E) (u : E) (η : ℝ)
     (h_step : ∀ t, t < T → f t (x t) - f t u ≤ (dist (x t) u ^ 2 - dist (x (t + 1)) u ^ 2 + η ^ 2 * ‖g t‖ ^ 2) / (2 * η)) :
@@ -1202,6 +1298,11 @@ lemma ogd_regret_inductive_bound (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ �
       ring
     linarith
 </code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -1237,7 +1338,8 @@ lemma ogd_regret_inductive_bound (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ �
 
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
-      <pre><code>omit [InnerProductSpace ℝ E] in
+      <div class="code-block-wrapper">
+<pre><code>omit [InnerProductSpace ℝ E] in
 -- FINAL REGRET BOUND THEOREM WITH OPTIMAL STEP SIZE
 lemma ogd_regret_final_rate_theorem (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ → E) (u : E) (D L : ℝ)
     (hD : 0 < D) (hL : 0 < L) (hT : 0 < T)
@@ -1296,6 +1398,11 @@ lemma ogd_regret_final_rate_theorem (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ
   -- Apply Optimal Step Size identity
   have h_opt := ogd_regret_optimal_step_size_choice D L (T:ℝ) hD hL hT_real
   linarith</code></pre>
+<div class="code-buttons">
+<button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard">Copy</button>
+<button class="download-btn" onclick="downloadCode(this)" title="Download as file">Download</button>
+</div>
+</div>
     </details>
   </div>
 
@@ -1306,8 +1413,8 @@ lemma ogd_regret_final_rate_theorem (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ
   </button>
 
   <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.8rem; text-align: center; display: flex; flex-direction: column; align-items: center;">
-    <div>UC San Diego &copy; 2026 James Doan</div>
-    <a href="https://www.github.com/j1doan/statistical-learning-theory" class="github-link" title="Project Repository">
+    <div>UC San Diego &copy; 2026 John Doe</div>
+    <a href="https://www.github.com/" class="github-link" title="Project Repository">
       <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.744.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
       </svg>
@@ -1540,6 +1647,52 @@ lemma ogd_regret_final_rate_theorem (T : ℕ) (f : ℕ → E → ℝ) (g x : ℕ
   calcSliders.forEach(s => s.addEventListener('input', updateCalc));
   updateCalc();
 })();
+
+/* --- Code block Copy / Download buttons --- */
+function copyCode(btn) {
+  const wrapper = btn.closest('.code-block-wrapper');
+  const code = wrapper.querySelector('code');
+  const text = code.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    /* fallback for older browsers */
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function downloadCode(btn) {
+  const wrapper = btn.closest('.code-block-wrapper');
+  const code = wrapper.querySelector('code');
+  const text = code.textContent;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'lemma.lean';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 </script>
 
 </body>

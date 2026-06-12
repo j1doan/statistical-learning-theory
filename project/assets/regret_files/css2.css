@@ -210,7 +210,37 @@
   font-family: 'Newsreader';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  display: swap;
   src: url(https://fonts.gstatic.com/s/newsreader/v26/cY9AfjOCX1hbuyalUrK4397yjA.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
+/* --- Code block Copy / Download buttons --- */
+.code-block-wrapper { position: relative; }
+
+.code-buttons {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.code-block-wrapper:hover .code-buttons { opacity: 1; }
+
+.code-buttons button {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  transition: filter 0.15s, transform 0.1s;
+  line-height: 1.5;
+}
+.code-buttons button:hover { filter: brightness(1.15); }
+.code-buttons button:active { transform: scale(0.95); }
+.code-buttons button.copied { background: #22c55e; }
