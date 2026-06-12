@@ -373,6 +373,86 @@
     }
     .sidebar-overlay.open { display: block; }
 
+    /* === Feature 3: Interactive Regret Calculator === */
+    .calculator-widget {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+    .calc-row {
+      margin-bottom: 1rem;
+    }
+    .calc-row label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+    .calc-row label span { color: var(--accent); font-weight: 600; font-family: var(--mono); display: inline-block; min-width: 6ch; text-align: right; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg-card);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg-card);
+      cursor: pointer;
+    }
+    .calc-results {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+    .calc-result {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .calc-result .calc-label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+    .calc-result .calc-value {
+      font-family: var(--mono);
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    @media (max-width: 768px) {
+      .calc-results { flex-direction: column; gap: 0.5rem; }
+      .calculator-widget { padding: 1rem; }
+    }
+
     @media (max-width: 1024px) {
       .sidebar { width: 30%; padding: 1.5rem; }
       .main-content { padding: 1.5rem; }
@@ -544,6 +624,38 @@
   <p>
     The following derivation establishes the global $O(\sqrt{T})$ rate by first analyzing the geometric stability of a single step and then accumulating these local bounds via induction.
   </p>
+
+  <!-- Interactive Regret Calculator -->
+  <div class="calculator-widget">
+    <h3 style="margin-top:0;">Interactive Regret Bound Demo</h3>
+    <p style="margin-bottom:1.2rem;font-size:0.9rem;">Drag the sliders to see how <i>D</i>, <i>L</i>, and <i>T</i> affect the regret bound and optimal step size.</p>
+
+    <div class="calc-row">
+      <label>Diameter <i>D</i><span id="val-D">5</span></label>
+      <input type="range" id="slider-D" min="0.5" max="20" step="0.5" value="5">
+    </div>
+
+    <div class="calc-row">
+      <label>Lipschitz <i>L</i><span id="val-L">1</span></label>
+      <input type="range" id="slider-L" min="0.1" max="10" step="0.1" value="1">
+    </div>
+
+    <div class="calc-row">
+      <label>Horizon <i>T</i><span id="val-T">1,000</span></label>
+      <input type="range" id="slider-T" min="1" max="4" step="0.01" value="3">
+    </div>
+
+    <div class="calc-results">
+      <div class="calc-result">
+        <span class="calc-label">Regret Bound $R(T) \le$</span>
+        <span class="calc-value" id="result-regret">316.23</span>
+      </div>
+      <div class="calc-result">
+        <span class="calc-label">Optimal Step Size $\eta =$</span>
+        <span class="calc-value" id="result-eta">0.0158</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Lemma 1 -->
   <div class="lemma-block" id="l1">
@@ -1252,6 +1364,25 @@
     });
   }
   if (overlay) overlay.addEventListener('click', closeSidebar);
+
+  // === Feature 3: Interactive Regret Calculator ===
+  const calcSliders = ['D','L','T'].map(id => document.getElementById('slider-' + id));
+  const calcVals    = ['D','L','T'].map(id => document.getElementById('val-' + id));
+  const calcRegret  = document.getElementById('result-regret');
+  const calcEta     = document.getElementById('result-eta');
+  function updateCalc() {
+    const D = parseFloat(calcSliders[0].value);
+    const L = parseFloat(calcSliders[1].value);
+    const T = Math.pow(10, parseFloat(calcSliders[2].value));
+    const sqrtT = Math.sqrt(T);
+    calcVals[0].textContent = D;
+    calcVals[1].textContent = L;
+    calcVals[2].textContent = Math.round(T).toLocaleString();
+    calcRegret.textContent = (D * L * sqrtT).toFixed(2);
+    calcEta.textContent    = (D / (L * sqrtT)).toFixed(4);
+  }
+  calcSliders.forEach(s => s.addEventListener('input', updateCalc));
+  updateCalc();
 })();
 </script>
 
