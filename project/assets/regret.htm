@@ -851,8 +851,7 @@ def lipschitz_continuous_def (g : E) (L : ℝ) : Prop :=
     <details class="lemma-code">
       <summary>Lean 4 Code</summary>
       <div class="code-block-wrapper">
-<pre><code>
--- OGD UPDATE RULE
+<pre><code>-- OGD UPDATE RULE
 def ogd_update_rule_def (P : Projection E) (η : ℝ) (x g : E) : E :=
   P.proj (x - η • g)
 </code></pre>
