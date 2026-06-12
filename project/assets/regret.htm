@@ -576,9 +576,17 @@
         }
       };
 
-      const savedTheme = localStorage.getItem('theme') || 'dark';
-      body.setAttribute('data-theme', savedTheme);
-      setTimeout(() => updateMermaid(savedTheme === 'light'), 100);
+      const initMermaid = async () => {
+        if (window.mermaid) {
+          const savedTheme = localStorage.getItem('theme') || 'dark';
+          body.setAttribute('data-theme', savedTheme);
+          await updateMermaid(savedTheme === 'light');
+        } else {
+          setTimeout(initMermaid, 50);
+        }
+      };
+
+      document.addEventListener('DOMContentLoaded', initMermaid);
 
       themeToggle.addEventListener('click', () => {
         const currentTheme = body.getAttribute('data-theme');
