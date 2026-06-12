@@ -234,13 +234,15 @@
   color: #fff;
   border: none;
   border-radius: 4px;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.72rem;
+  padding: 0.3rem;
   cursor: pointer;
   font-family: 'DM Sans', system-ui, sans-serif;
   transition: filter 0.15s, transform 0.1s;
-  line-height: 1.5;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .code-buttons button:hover { filter: brightness(1.15); }
 .code-buttons button:active { transform: scale(0.95); }
-.code-buttons button.copied { background: #22c55e; }
+.code-buttons button.copied { background: #22c55e; font-size: 0.72rem; padding: 0.3rem 0.5rem; }
